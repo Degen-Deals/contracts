@@ -116,9 +116,7 @@ export interface DegenDealsERC721Interface extends Interface {
       | "mintFeePercent"
       | "modifyPaymentToken"
       | "name"
-      | "obligeeIncentivePercent"
       | "obligeeTransfer"
-      | "obligorIncentivePercent"
       | "obligorTransfer"
       | "ownerOf"
       | "parentDealId"
@@ -137,6 +135,9 @@ export interface DegenDealsERC721Interface extends Interface {
       | "setApprovalForAll"
       | "setDealURI"
       | "setDefaultURI"
+      | "setKYCWallet"
+      | "setLegalWallet"
+      | "setPlatformWallet"
       | "split"
       | "splitFeePercent"
       | "supportsInterface"
@@ -337,16 +338,8 @@ export interface DegenDealsERC721Interface extends Interface {
   ): string;
   encodeFunctionData(functionFragment: "name", values?: undefined): string;
   encodeFunctionData(
-    functionFragment: "obligeeIncentivePercent",
-    values?: undefined
-  ): string;
-  encodeFunctionData(
     functionFragment: "obligeeTransfer",
     values: [BigNumberish, AddressLike, AddressLike]
-  ): string;
-  encodeFunctionData(
-    functionFragment: "obligorIncentivePercent",
-    values?: undefined
   ): string;
   encodeFunctionData(
     functionFragment: "obligorTransfer",
@@ -419,6 +412,18 @@ export interface DegenDealsERC721Interface extends Interface {
   encodeFunctionData(
     functionFragment: "setDefaultURI",
     values: [string]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "setKYCWallet",
+    values: [AddressLike]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "setLegalWallet",
+    values: [AddressLike]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "setPlatformWallet",
+    values: [AddressLike]
   ): string;
   encodeFunctionData(
     functionFragment: "split",
@@ -580,15 +585,7 @@ export interface DegenDealsERC721Interface extends Interface {
   ): Result;
   decodeFunctionResult(functionFragment: "name", data: BytesLike): Result;
   decodeFunctionResult(
-    functionFragment: "obligeeIncentivePercent",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
     functionFragment: "obligeeTransfer",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
-    functionFragment: "obligorIncentivePercent",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -646,6 +643,18 @@ export interface DegenDealsERC721Interface extends Interface {
   decodeFunctionResult(functionFragment: "setDealURI", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "setDefaultURI",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "setKYCWallet",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "setLegalWallet",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "setPlatformWallet",
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "split", data: BytesLike): Result;
@@ -1284,15 +1293,11 @@ export interface DegenDealsERC721 extends BaseContract {
 
   name: TypedContractMethod<[], [string], "view">;
 
-  obligeeIncentivePercent: TypedContractMethod<[], [bigint], "view">;
-
   obligeeTransfer: TypedContractMethod<
     [arg0: BigNumberish, arg1: AddressLike, arg2: AddressLike],
     [boolean],
     "view"
   >;
-
-  obligorIncentivePercent: TypedContractMethod<[], [bigint], "view">;
 
   obligorTransfer: TypedContractMethod<
     [arg0: BigNumberish, arg1: AddressLike, arg2: AddressLike],
@@ -1375,6 +1380,24 @@ export interface DegenDealsERC721 extends BaseContract {
 
   setDefaultURI: TypedContractMethod<
     [_defaultURI: string],
+    [void],
+    "nonpayable"
+  >;
+
+  setKYCWallet: TypedContractMethod<
+    [kycWallet_: AddressLike],
+    [void],
+    "nonpayable"
+  >;
+
+  setLegalWallet: TypedContractMethod<
+    [legalWallet_: AddressLike],
+    [void],
+    "nonpayable"
+  >;
+
+  setPlatformWallet: TypedContractMethod<
+    [platformWallet_: AddressLike],
     [void],
     "nonpayable"
   >;
@@ -1675,18 +1698,12 @@ export interface DegenDealsERC721 extends BaseContract {
     nameOrSignature: "name"
   ): TypedContractMethod<[], [string], "view">;
   getFunction(
-    nameOrSignature: "obligeeIncentivePercent"
-  ): TypedContractMethod<[], [bigint], "view">;
-  getFunction(
     nameOrSignature: "obligeeTransfer"
   ): TypedContractMethod<
     [arg0: BigNumberish, arg1: AddressLike, arg2: AddressLike],
     [boolean],
     "view"
   >;
-  getFunction(
-    nameOrSignature: "obligorIncentivePercent"
-  ): TypedContractMethod<[], [bigint], "view">;
   getFunction(
     nameOrSignature: "obligorTransfer"
   ): TypedContractMethod<
@@ -1786,6 +1803,15 @@ export interface DegenDealsERC721 extends BaseContract {
   getFunction(
     nameOrSignature: "setDefaultURI"
   ): TypedContractMethod<[_defaultURI: string], [void], "nonpayable">;
+  getFunction(
+    nameOrSignature: "setKYCWallet"
+  ): TypedContractMethod<[kycWallet_: AddressLike], [void], "nonpayable">;
+  getFunction(
+    nameOrSignature: "setLegalWallet"
+  ): TypedContractMethod<[legalWallet_: AddressLike], [void], "nonpayable">;
+  getFunction(
+    nameOrSignature: "setPlatformWallet"
+  ): TypedContractMethod<[platformWallet_: AddressLike], [void], "nonpayable">;
   getFunction(
     nameOrSignature: "split"
   ): TypedContractMethod<

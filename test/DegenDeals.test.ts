@@ -3,7 +3,7 @@ import {
     loadFixture,
   } from "@nomicfoundation/hardhat-toolbox/network-helpers";
 import { anyValue } from "@nomicfoundation/hardhat-chai-matchers/withArgs";
-import { expect } from "chai";
+import { expect, use } from "chai";
 import hre from "hardhat";
 import { ZeroAddress } from "ethers";
 
@@ -19,7 +19,11 @@ describe("DegenDeals", function () {
         let platformWalletAddress = platformWallet.address
         let legalWalletAddress = legalWallet.address
         let kycWalletAddress = kycWallet.address
-
+        console.log("deployer: ", deployer.address)
+        console.log("platformWallet: ", platformWallet.address)
+        console.log("legalWallet: ", legalWallet.address)
+        console.log("user1: ", user1.address)
+        console.log("user2: ", user2.address)
         const DegenDealsERC20 = await hre.ethers.getContractFactory("DegenDealsERC20")
         const DegenDealsERC721 = await hre.ethers.getContractFactory("DegenDealsERC721")
         const DegenDealsERC6551Account = await hre.ethers.getContractFactory("DegenDealsERC6551Account")
@@ -52,7 +56,7 @@ describe("DegenDeals", function () {
         
         degenDealsERC6551Registry = DegenDealsERC6551Registry.connect(deployer).attach(degenDealsERC6551RegistryAddress)
 
-        degenDealsERC721 = await DegenDealsERC721.deploy(
+        degenDealsERC721 = await DegenDealsERC721.connect(deployer).deploy(
             degenDealsERC20Address,
             degenDealsERC6551Registry,
             platformWallet,
@@ -61,17 +65,14 @@ describe("DegenDeals", function () {
           );
         await degenDealsERC721.waitForDeployment()
 
-        const initRegistryTx = await degenDealsERC6551Registry.initialize(
+        const initRegistryTx = await degenDealsERC6551Registry.connect(deployer).initialize(
             degenDealsERC721.target,
             degenDealsERC6551Account.target,
             platformWallet.address
         )
         await initRegistryTx.wait()
 
-        const setEntryPointTx = await degenDealsERC6551Registry.connect(deployer).setEntryPoint(platformWallet.address)
-        await setEntryPointTx.wait()
-
-        await degenDealsERC721.modifyPaymentToken(degenDealsERC20.target, true)
+        await degenDealsERC721.connect(deployer).modifyPaymentToken(degenDealsERC20.target, true)
   
         return { 
             degenDealsERC20, degenDealsERC721, degenDealsERC6551Account, degenDealsERC6551Registry,
@@ -167,11 +168,76 @@ describe("DegenDeals", function () {
             await degenDealsERC20.connect(user2).approve(degenDealsERC721.target, totalAmount)
             await degenDealsERC721.connect(user2).pay(dealId, data)
 
-            let 
         })
 
+       
     });
   
+    describe.skip("Mint, designate and fund", () => {
+        let degenDealsERC20: any, degenDealsERC721: any
+        let degenDealsERC6551Registry: any, degenDealsERC6551Account: any
+        let deployer: any, platformWallet: any, legalWallet: any, kycWallet: any, user1: any, user2: any
+
+        before(async () => {
+            ({  degenDealsERC20, degenDealsERC721, degenDealsERC6551Account, degenDealsERC6551Registry,
+                deployer, platformWallet, legalWallet, kycWallet, user1, user2
+             } = await loadFixture(deployDegenDeals))
+            let decimals = BigInt(await degenDealsERC20.decimals())
+            console.log("Decimals: ", decimals)
+            await degenDealsERC20.mint(user1.address, 5n * 10n ** decimals)
+            await degenDealsERC20.mint(user2.address, 5n * 10n ** decimals)
+        });
+
+        it("user1 become member", async () => {
+            await degenDealsERC721.connect(user1).becomeMember("0x");
+            await degenDealsERC721.connect(user2).becomeMember("0x")
+        })
+
+        it("user1 mint dealId = 0", async function () {
+            let offerData = {
+                "name": "Degen Deals 0",
+                "description": "deal 0",
+                "image": "ipfs://QmYBrWr1MCMCxNB78RF96EzJHypZ658nUGtAQYq8VnWfqj"
+            }
+
+            let offerHash = JSON.stringify(offerData).toString()
+            console.log(offerHash);
+            let paymentToken = degenDealsERC20.target
+            let paymentAmount = 1n * 10n ** 18n
+            let period = 10_000
+            let obligee = ZeroAddress
+            let erc6551Account = ZeroAddress
+        
+            let mintFee = await degenDealsERC721.connect(user1).calcMintFee(paymentAmount)
+            console.log("mintFee: ", mintFee)
+
+            let txApprove = await degenDealsERC20.connect(user1).approve(degenDealsERC721.target, mintFee)
+            await txApprove.wait()
+
+            await degenDealsERC721.connect(user1).mint(offerHash, paymentToken, paymentAmount, period, obligee, erc6551Account)
+        });
+
+        it('user1 designate the discount 5%, user2 fund it', async () => {
+
+            let dealId = 0
+            let dealDiscountPercent_ = 5000
+            await degenDealsERC721.connect(user1).designate(dealId, dealDiscountPercent_)
+
+            let fundAmount = await degenDealsERC721.calcFundAmount(dealId)
+            let totalAmount = fundAmount[0]
+
+            await degenDealsERC20.connect(user2).approve(degenDealsERC721.target, totalAmount)
+
+            let owner = await degenDealsERC721.ownerOf(dealId)
+            let fundData = "0x"
+            await degenDealsERC721.connect(user2).fund(dealId, fundData)
+
+            let newOwner = await degenDealsERC721.ownerOf(dealId)
+            console.log(owner)
+            console.log(newOwner)
+        })
+
+    })
      
 });
   

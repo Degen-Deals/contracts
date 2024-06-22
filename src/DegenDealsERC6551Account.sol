@@ -163,8 +163,8 @@ contract DegenDealsERC6551Account is
         /// any code / aml checks / defi integration/ .... / data parsing
 
         // for example we make instant transfer to obligor
-        address obligor = dealData.obligor;
-        paymentToken.safeTransfer(obligor, paymentAmount);
+        address ownerOf = degenDeals.ownerOf(dealId);
+        paymentToken.safeTransfer(ownerOf, paymentAmount);
     }
 
     function deal(bytes memory data) public virtual override {

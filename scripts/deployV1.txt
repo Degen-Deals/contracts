@@ -1,0 +1,8 @@
+ippolit@MacBook-Pro-ippolit-3 ~/Dapps/degen-deals-contracts % yarn hardhat run scripts/deploy.ts --network optimismSepolia
+yarn run v1.22.17
+$ /Users/ippolit/Dapps/degen-deals-contracts/node_modules/.bin/hardhat run scripts/deploy.ts --network optimismSepolia
+DegenDealsERC20 deployed to:  0x20bF82DD984f1bE72d9234FfAEEF2f78eC3DfF1d
+DegenDealsERC6551Account deployed to: 0x4356c300B1021e2725269531E16854c31Ae02EA3
+DegenDealsERC6551Registry deployed to: 0x2397a8C92f945e351d43ca9De786090211C784F7
+DegenDealsProxy deployed to: 0x67B4cF044e4ccC5964ed0e19F1Fc4054beaA5725
+DegenDealsERC721: 0x3e3d5364e6f767eb8f6aecdce97afcdd08462d35

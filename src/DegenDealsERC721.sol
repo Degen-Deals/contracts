@@ -14,9 +14,10 @@ import "./interfaces/IDegenDealsERC6551Account.sol";
 import "./interfaces/IDegenDealsERC6551Registry.sol";
 
 /**
- * @notice Tokenization of debt notes with associated accounts
- * @author 1NFT.agency ()
- * @author Vakhtanh Chikhladze (the.vaho1337@gmail.com) 
+ * @notice Tokenization of obligation and rights with associated smart-contract accounts
+ * @author 1NFT.agency (aleks@1nft.agency)
+ * @author Vakhtanh Chikhladze (the.vaho1337@gmail.com)
+ * @author Petro Yaremenko ()
  */
 contract DegenDealsERC721 is Initializable, AccessControl, ERC721, IDegenDealsERC721 {
     using SafeERC20 for IERC20;
@@ -29,7 +30,7 @@ contract DegenDealsERC721 is Initializable, AccessControl, ERC721, IDegenDealsER
     bytes32 public constant ARBITRATOR_ROLE = keccak256("ARBITRATOR_ROLE");
 
     /// @dev 100% == 100_000
-    uint256 public constant PERCENT_DENOMINATOR = 100_000; 
+    uint256 public constant PERCENT_DENOMINATOR = 100_000;
 
     /// @dev amount of total minted deals
     uint256 public totalDeals;
@@ -64,8 +65,10 @@ contract DegenDealsERC721 is Initializable, AccessControl, ERC721, IDegenDealsER
     /// @dev royalty percent
     uint256 public royaltyPercent;
 
-    /// @dev shares
+    /// @dev legal share of fee
     uint256 public legalFeeShare;
+
+    /// @dev platform share of fee
     uint256 public platformFeeShare;
 
     /// @dev the sum of all fees
@@ -73,12 +76,6 @@ contract DegenDealsERC721 is Initializable, AccessControl, ERC721, IDegenDealsER
 
     /// @dev amount of dedeal token per successful deal
     uint256 public dedealRate;
-
-    /// @notice how much seller will earn more incentive token
-    uint256 public obligorIncentivePercent;
-
-    /// @notice how much buyer will earn more incentive token 
-    uint256 public obligeeIncentivePercent;
 
     /// @dev address of payment token => is payment token
     mapping (address => bool) public isPaymentToken;
@@ -105,12 +102,13 @@ contract DegenDealsERC721 is Initializable, AccessControl, ERC721, IDegenDealsER
     constructor(
         address _dedeal,
         address _dedealsERC6551Registry,
-        address _platformWallet, 
-        address _legalWallet, 
+        address _platformWallet,
+        address _legalWallet,
         address _kycWallet
     ) ERC721("Degen Deals Collection", "DeDEALS") { 
+        address _admin = msg.sender;
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
-        _grantRole(DEGEN_BOSS_ROLE, msg.sender);
+        _grantRole(DEGEN_BOSS_ROLE, _admin);
         _grantRole(DEGEN_BOSS_ROLE, _platformWallet);
         _grantRole(DEGEN_BOSS_ROLE, _legalWallet);
 
@@ -133,15 +131,34 @@ contract DegenDealsERC721 is Initializable, AccessControl, ERC721, IDegenDealsER
         legalFeeShare = 500;
         // 500 + 500 = 1000
         totalFeeShare = platformFeeShare + legalFeeShare;
-
-        obligorIncentivePercent = 110_000; // 110%
-        obligeeIncentivePercent = 150_000;  // 150%
     }
 
     /// @dev can be set only by DEGEN_BOSS
     function setDefaultURI(string memory _defaultURI) public onlyRole(DEGEN_BOSS_ROLE) {
         defaultURI = _defaultURI;
     }
+
+    /// @notice set platform wallet
+    /// @param platformWallet_ address of new platform wallet
+    function setPlatformWallet(address platformWallet_) public onlyRole(DEGEN_BOSS_ROLE) {
+        /// some code
+        platformWallet = platformWallet_;
+    }
+
+    /// @notice set legal wallet
+    /// @param legalWallet_ address of new legal wallet
+    function setLegalWallet(address legalWallet_) public onlyRole(DEGEN_BOSS_ROLE) {
+        /// some DAO logic...
+        legalWallet = legalWallet_;
+    }
+
+    /// @notice set new KYC wallet for verification of KYC/KYB
+    /// @param kycWallet_ address of kyc wallet 
+    function setKYCWallet(address kycWallet_) public onlyRole(DEGEN_BOSS_ROLE) {
+        /// some DAO logic... 
+        kycWallet = kycWallet_;
+    }
+
 
     /// @notice modify token as payment
     /// @param token address of payment token
@@ -219,6 +236,7 @@ contract DegenDealsERC721 is Initializable, AccessControl, ERC721, IDegenDealsER
         emit Mint(dealId, obligor, obligee, dealAccount, offerHash, address(paymentToken), paymentAmount, period);
     }
 
+    /// @dev internal function for calc mint amount, transfer from the mint amount and distribute fee
     function _chargeAndDistributeMintFee(IERC20 paymentToken, uint256 paymentAmount) public {
         uint256 mintFee = calcMintFee(paymentAmount);
         if (mintFee > 0) {
@@ -274,6 +292,8 @@ contract DegenDealsERC721 is Initializable, AccessControl, ERC721, IDegenDealsER
     }
     
     /// @notice designate the deal with discount.
+    /// @param dealId id of the deal
+    /// @param dealDiscountPercent_ the percent of discount. Value is from 1 to PERCENT_DENOMINATOR - 1;
     function designate(uint256 dealId, uint256 dealDiscountPercent_) public override {
         require(0 < dealDiscountPercent_ && dealDiscountPercent_ < PERCENT_DENOMINATOR, "DegenDealsERC721: discount > 100% or 0%");
         DealData storage dealData = deals[dealId];
@@ -283,7 +303,9 @@ contract DegenDealsERC721 is Initializable, AccessControl, ERC721, IDegenDealsER
         emit Designate(dealId, dealDiscountPercent_);
     }
 
-    /// @notice fund the deal with discount
+    /// @notice fund the deal with discount. The right of receiving payment goes to `msg.sender`
+    /// @param dealId id of the deal
+    /// @param data extra data that forwards to associated smart-contract account
     function fund(uint256 dealId, bytes memory data) public override {
         DealData storage dealData = deals[dealId];
         require(dealDiscountPercent[dealId] > 0, "DegenDealsERC721: No discount");
@@ -303,6 +325,10 @@ contract DegenDealsERC721 is Initializable, AccessControl, ERC721, IDegenDealsER
         _transfer(dealData.obligor, msg.sender, dealId);
     }
 
+    /// @notice the modification of transferFrom 
+    /// @param from address of sender of NFT
+    /// @param to address of receiver of NFT
+    /// @param dealId id of the deal
     function transferFrom(address from, address to, uint256 dealId) public override(ERC721, IERC721) {
         DealData storage dealData = deals[dealId];
         if (dealData.status == DealStatus.DEAL || dealData.status == DealStatus.RESOLVED) {
@@ -319,6 +345,9 @@ contract DegenDealsERC721 is Initializable, AccessControl, ERC721, IDegenDealsER
         }
     }
 
+    /// @notice transfer the obligor obligation
+    /// @param dealId id of the deal
+    /// @param data extra data that forwards to associated smart-contract account
     function tranferObligor(uint256 dealId, bytes memory data) public {
         DealData storage dealData = deals[dealId];
         address obligor = dealData.obligor;
@@ -341,12 +370,15 @@ contract DegenDealsERC721 is Initializable, AccessControl, ERC721, IDegenDealsER
         }
     }
 
+    /// @notice transfer the obligee obligation of deal
+    /// @param dealId id of the deal
+    /// @param data extra data that forwards to associated smart-contract account
     function tranferObligee(uint256 dealId, bytes memory data) public {
         DealData storage dealData = deals[dealId];
         address obligee = dealData.obligee;
         address newObligee = msg.sender;
         if (dealData.obligee == msg.sender) {
-            obligorTransfer[dealId][obligee][newObligee] = true;
+            obligeeTransfer[dealId][obligee][newObligee] = true;
         }
         else if (obligeeTransfer[dealId][obligee][newObligee]) {
             IDegenDealsERC6551Account dealAccount = IDegenDealsERC6551Account(payable(dealData.dealAccount));
@@ -364,6 +396,8 @@ contract DegenDealsERC721 is Initializable, AccessControl, ERC721, IDegenDealsER
     }
 
     /// @notice oblegee pay the offer
+    /// @param dealId id of the deal
+    /// @param data extra data that forwards to associated smart-contract account
     function pay(uint256 dealId, bytes memory data) public onlyRole(MEMBER_ROLE) {
         DealData storage dealData = deals[dealId];
         require(dealData.status == DealStatus.MINTED, "DegenDealsERC721: only MINTED ");
@@ -398,7 +432,9 @@ contract DegenDealsERC721 is Initializable, AccessControl, ERC721, IDegenDealsER
         emit Pay(dealId, obligee, address(paymentToken), payAmount);
     }
 
-    /// @notice the obligor or obligee is satisfied
+    /// @notice the obligor or obligee is satisfied and confirm obligation
+    /// @param dealId id of the deal
+    /// @param data extra data that forwards to associated smart-contract account
     function deal(uint256 dealId, bytes memory data) public onlyRole(MEMBER_ROLE) {
         DealData storage dealData = deals[dealId];
         
@@ -424,10 +460,10 @@ contract DegenDealsERC721 is Initializable, AccessControl, ERC721, IDegenDealsER
         } catch {
             revert DealAccountDealFailed();
         }
-
     }
-    
-    /// @notice if deal is out of agreement by one of the side
+
+    /// @notice if deal is out of agreement by one of the side of obligor or obligee
+    /// @param dealId id of the deal
     function arbitrage(uint256 dealId) public onlyRole(MEMBER_ROLE) {
         DealData storage dealData = deals[dealId];
         require(msg.sender == dealData.obligor || msg.sender == dealData.obligee, "DegenDealsERC721: not eligible");
@@ -440,6 +476,8 @@ contract DegenDealsERC721 is Initializable, AccessControl, ERC721, IDegenDealsER
         emit Arbitrage(dealId, msg.sender);
     }
 
+    /// @notice resolve the arbitrage by arbitrator
+    /// @param dealId id of the deal
     function resolve(uint256 dealId, uint8 decision) public onlyRole(ARBITRATOR_ROLE) {
         DealData storage dealData = deals[dealId];
 
@@ -468,6 +506,8 @@ contract DegenDealsERC721 is Initializable, AccessControl, ERC721, IDegenDealsER
         }
     }
 
+    /// @param dealId id of the deal
+    /// @param dealURI_ the URI of deal
     function setDealURI(uint256 dealId, string memory dealURI_) public {
         DealData storage dealData = deals[dealId];
         require(dealData.status == DealStatus.DEAL || dealData.status == DealStatus.RESOLVED, "DegenDealsERC721: only DEAL or RESOLVED");
@@ -479,20 +519,21 @@ contract DegenDealsERC721 is Initializable, AccessControl, ERC721, IDegenDealsER
         return paymentAmount * mintFeePercent / PERCENT_DENOMINATOR;
     }
 
-    /// @param dealId id of deal
+    /// @param dealId id of the deal
     function calcSplitFee(uint256 dealId) public view returns (uint256 totalAmount, uint256 paymentAmount, uint256 splitFee) {
         paymentAmount = deals[dealId].paymentAmount;
         splitFee = paymentAmount * splitFeePercent / PERCENT_DENOMINATOR;
         totalAmount = paymentAmount + splitFee;
     }
 
+    /// @param dealId id of the deal
     function calcFundAmount(uint256 dealId) public view returns (uint256 totalAmount, uint256 amountWithDiscount, uint256 fundFee) {
         amountWithDiscount = deals[dealId].paymentAmount * dealDiscountPercent[dealId] / PERCENT_DENOMINATOR;
         fundFee = amountWithDiscount * fundFeePercent / PERCENT_DENOMINATOR;
         totalAmount = amountWithDiscount + fundFee;
     }
 
-    /// @param dealId id of deal
+    /// @param dealId id of the deal
     function calcPayAmount(uint256 dealId) public view returns (uint256 totalAmount, uint256 payAmount, uint256 payFee) {
         DealData memory dealData = deals[dealId];
         payAmount = dealData.paymentAmount;
@@ -507,12 +548,13 @@ contract DegenDealsERC721 is Initializable, AccessControl, ERC721, IDegenDealsER
 
     /// @notice return the root deal
     /// @dev the linked list traversal. parentDealId represent the link to parent deal id
-    /// @param dealId the deal id
+    /// @param dealId id of the deal
     function getRootDealId(uint256 dealId) public view returns (uint256 rootDealId) {
         rootDealId = dealId;
         for (; parentDealId[dealId] != rootDealId; rootDealId = parentDealId[dealId]) {}
     }
 
+    /// @param dealId id of the deal
     function tokenURI(uint256 dealId) public view override returns (string memory) {
         _requireOwned(dealId);
         string memory uri = dealURI[dealId];
@@ -523,6 +565,9 @@ contract DegenDealsERC721 is Initializable, AccessControl, ERC721, IDegenDealsER
         }
     }
 
+    /// @notice implementation of ERC2981 royalty standart
+    /// @param dealId id of the deal
+    /// @param salePrice the amount of salePrice
     function royaltyInfo(uint256 dealId, uint256 salePrice) public view returns (address receiver, uint256 royaltyAmount) {
         dealId;
         receiver = platformWallet;
