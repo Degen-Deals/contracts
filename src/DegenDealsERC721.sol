@@ -45,6 +45,7 @@ contract DegenDealsERC721 is Initializable, AccessControl, ERC721, IDegenDealsER
     /// @dev the platform token
     IDegenDealsERC20 public dedeal;
 
+    /// @dev ERC6551 registry
     IDegenDealsERC6551Registry public dedealsERC6551Registry;
 
     /// @dev list fee percent
@@ -158,7 +159,6 @@ contract DegenDealsERC721 is Initializable, AccessControl, ERC721, IDegenDealsER
         /// some DAO logic... 
         kycWallet = kycWallet_;
     }
-
 
     /// @notice modify token as payment
     /// @param token address of payment token
@@ -563,6 +563,12 @@ contract DegenDealsERC721 is Initializable, AccessControl, ERC721, IDegenDealsER
         } else {
             return uri;
         }
+    }
+
+    /// @notice returns true is wallet is member
+    /// @param wallet address of wallet
+    function isMember(address wallet) public view returns (bool) {
+        return hasRole(MEMBER_ROLE, wallet);
     }
 
     /// @notice implementation of ERC2981 royalty standart

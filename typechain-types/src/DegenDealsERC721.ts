@@ -108,6 +108,7 @@ export interface DegenDealsERC721Interface extends Interface {
       | "grantRole"
       | "hasRole"
       | "isApprovedForAll"
+      | "isMember"
       | "isPaymentToken"
       | "kycWallet"
       | "legalFeeShare"
@@ -303,6 +304,10 @@ export interface DegenDealsERC721Interface extends Interface {
   encodeFunctionData(
     functionFragment: "isApprovedForAll",
     values: [AddressLike, AddressLike]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "isMember",
+    values: [AddressLike]
   ): string;
   encodeFunctionData(
     functionFragment: "isPaymentToken",
@@ -561,6 +566,7 @@ export interface DegenDealsERC721Interface extends Interface {
     functionFragment: "isApprovedForAll",
     data: BytesLike
   ): Result;
+  decodeFunctionResult(functionFragment: "isMember", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "isPaymentToken",
     data: BytesLike
@@ -1262,6 +1268,8 @@ export interface DegenDealsERC721 extends BaseContract {
     "view"
   >;
 
+  isMember: TypedContractMethod<[wallet: AddressLike], [boolean], "view">;
+
   isPaymentToken: TypedContractMethod<[arg0: AddressLike], [boolean], "view">;
 
   kycWallet: TypedContractMethod<[], [string], "view">;
@@ -1658,6 +1666,9 @@ export interface DegenDealsERC721 extends BaseContract {
     [boolean],
     "view"
   >;
+  getFunction(
+    nameOrSignature: "isMember"
+  ): TypedContractMethod<[wallet: AddressLike], [boolean], "view">;
   getFunction(
     nameOrSignature: "isPaymentToken"
   ): TypedContractMethod<[arg0: AddressLike], [boolean], "view">;

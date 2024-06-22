@@ -16,3 +16,4 @@ node_modules
 artifacts
 .github
 cache_hardhat
+typechain-types

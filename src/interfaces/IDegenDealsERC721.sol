@@ -70,6 +70,7 @@ interface IDegenDealsERC721 is IERC721, IERC2981, IERC4906 {
     /// @dev if minter == obligor, than no 
     /// @dev if parentDealId == dealId, than it is root deal
     struct DealData {
+        
         address minter;
         address obligor;
         string offerHash;

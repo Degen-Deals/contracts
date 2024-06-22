@@ -37,7 +37,8 @@ const config: HardhatUserConfig = {
         // url: `https://sepolia.infura.io/v3/${INFURA_API_KEY}`
         // url: 'https://eth-sepolia.g.alchemy.com/v2/l68CQ2vgQW7t5BiyiPAdC-rhTcGy_9xZ'
         // url: `https://optimism-sepolia.infura.io/v3/${INFURA_API_KEY}`,
-        url: `https://opt-sepolia.g.alchemy.com/v2/l68CQ2vgQW7t5BiyiPAdC-rhTcGy_9xZ`
+        //url: `https://opt-sepolia.g.alchemy.com/v2/l68CQ2vgQW7t5BiyiPAdC-rhTcGy_9xZ`
+        url: `https://opt-mainnet.g.alchemy.com/v2/l68CQ2vgQW7t5BiyiPAdC-rhTcGy_9xZ`
       },
       allowUnlimitedContractSize: false,
       blockGasLimit: 1000_000_000,
@@ -59,7 +60,8 @@ const config: HardhatUserConfig = {
       accounts: {mnemonic: MNEMONIC}
     },
     optimism: {
-      url: `https://optimism-mainnet.infura.io/v3/${INFURA_API_KEY}`,
+      url: `https://opt-mainnet.g.alchemy.com/v2/l68CQ2vgQW7t5BiyiPAdC-rhTcGy_9xZ`,
+      //url: `https://optimism-mainnet.infura.io/v3/${INFURA_API_KEY}`,
       gas: 'auto',
       gasPrice: 'auto',
       accounts: {mnemonic: MNEMONIC}
