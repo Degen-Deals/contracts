@@ -571,6 +571,25 @@ contract DegenDealsERC721 is Initializable, AccessControl, ERC721, IDegenDealsER
         return hasRole(MEMBER_ROLE, wallet);
     }
 
+    /// @notice return deals data in pagination
+    /// @param dealIdFrom id of the deal start
+    /// @param dealIdTo id of the deal end
+    function getDeals(uint256 dealIdFrom, uint256 dealIdTo) public view returns (DealData[] memory dealDatas) {
+        require(dealIdFrom <= dealIdTo, "Invalid range");
+        if (totalDeals == 0) {
+            dealDatas = new DealData[](0);
+        } else {
+            uint256 len = dealIdTo - dealIdFrom + 1;
+            dealDatas = new DealData[](len);
+        }
+        if (dealIdTo >= totalDeals) {
+            dealIdTo = totalDeals - 1;
+        }
+        for (uint256 i = dealIdFrom; i <= dealIdTo; ++i) {
+            dealDatas[i - dealIdFrom] = deals[i];
+        }
+    }
+
     /// @notice implementation of ERC2981 royalty standart
     /// @param dealId id of the deal
     /// @param salePrice the amount of salePrice

@@ -102,6 +102,7 @@ export interface DegenDealsERC721Interface extends Interface {
       | "fundFeePercent"
       | "getApproved"
       | "getDeal"
+      | "getDeals"
       | "getRoleAdmin"
       | "getRootDealId"
       | "grantMember"
@@ -280,6 +281,10 @@ export interface DegenDealsERC721Interface extends Interface {
   encodeFunctionData(
     functionFragment: "getDeal",
     values: [BigNumberish]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "getDeals",
+    values: [BigNumberish, BigNumberish]
   ): string;
   encodeFunctionData(
     functionFragment: "getRoleAdmin",
@@ -548,6 +553,7 @@ export interface DegenDealsERC721Interface extends Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "getDeal", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "getDeals", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "getRoleAdmin",
     data: BytesLike
@@ -1240,6 +1246,12 @@ export interface DegenDealsERC721 extends BaseContract {
     "view"
   >;
 
+  getDeals: TypedContractMethod<
+    [dealIdFrom: BigNumberish, dealIdTo: BigNumberish],
+    [IDegenDealsERC721.DealDataStructOutput[]],
+    "view"
+  >;
+
   getRoleAdmin: TypedContractMethod<[role: BytesLike], [string], "view">;
 
   getRootDealId: TypedContractMethod<[dealId: BigNumberish], [bigint], "view">;
@@ -1630,6 +1642,13 @@ export interface DegenDealsERC721 extends BaseContract {
   ): TypedContractMethod<
     [dealId: BigNumberish],
     [IDegenDealsERC721.DealDataStructOutput],
+    "view"
+  >;
+  getFunction(
+    nameOrSignature: "getDeals"
+  ): TypedContractMethod<
+    [dealIdFrom: BigNumberish, dealIdTo: BigNumberish],
+    [IDegenDealsERC721.DealDataStructOutput[]],
     "view"
   >;
   getFunction(
