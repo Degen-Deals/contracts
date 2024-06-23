@@ -11,6 +11,15 @@ Deployed addresses on Optimism mainnet:
 | DegenDealsERC6551Registry implementation | 0x869285aF7581549ca7cC6dDeAfaBa99b966494fa |
 | DegenDealsERC6551Registry proxy     | 0xAA45302106FfAa5D84c9AB05db688F877659fb1B |
 
+Optimism testnet:
+
+| Contract                            | Address                                    |
+|-------------------------------------|--------------------------------------------|
+| DegenDealsERC721                    | 0xAA45302106FfAa5D84c9AB05db688F877659fb1B |
+| DegenDealsERC6551Account            | 0x750e825c4edBb4f64a15dDb78CaE1aecEE70F6ad |
+| DegenDealsERC6551Registry implementation | 0x2b72b717a4151F93ead42606EB053407ff860009 |
+| DegenDealsERC6551Registry proxy     | 0x869285aF7581549ca7cC6dDeAfaBa99b966494fa |
+
 DegenDeals is a smart contract system designed for tokenizing obligations and rights with associated smart contract accounts. The architecture leverages several components, including ERC721 tokens for representing deals, ERC6551 accounts for managing deal-specific logic with combination of ERC4337 smart contracts account. The system incorporates various roles for managing access and functionality, ensuring a robust and flexible platform for decentralized deals.
 
 # DegenDealsERC721
