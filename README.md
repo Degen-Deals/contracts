@@ -50,10 +50,12 @@ cd contracts
 2. Install dependencies
 ```
 yarn
-forge
 ```
 
-3. Compile
+3. fill dotenv file `.env`
+
+
+4. Compile
 ```
 yarn hardhat compile
 ```
