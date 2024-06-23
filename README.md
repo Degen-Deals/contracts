@@ -47,13 +47,12 @@ git clone https://github.com/Degen-Deals/contracts
 cd contracts
 ```
 
-2. Install dependencies
+2. Install dependencies. Requirement of `node` version 18. (`node --version`) 
 ```
 yarn
 ```
 
-3. fill dotenv file `.env`
-
+3. fill dotenv file `.env`. Variable MNEMONIC is sufficient.
 
 4. Compile
 ```
