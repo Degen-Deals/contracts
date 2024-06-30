@@ -3,18 +3,19 @@ pragma solidity ^0.8.24;
 
 import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import "./interfaces/IDegenDealsERC20.sol";
-import "./interfaces/IDegenDealsERC721.sol";
+import "./interfaces/IDeDealERC20.sol";
+import "./interfaces/IDeDealsERC721.sol";
 
-contract DegenDealsERC20 is Initializable, ERC20, IDegenDealsERC20 {
+contract DeDealERC20 is Initializable, ERC20, IDeDealERC20 {
 
-    IDegenDealsERC721 public degenDeals;
+    IDeDealsERC721 public degenDeals;
 
     constructor() ERC20("Degen Deals Token", "DeDEAL") {}
 
+    /// @notice instantiate the initial supply
     function initialize(address degenDeals_) public initializer() {
-        degenDeals = IDegenDealsERC721(degenDeals_);
-
+        degenDeals = IDeDealsERC721(degenDeals_);
+        
     }
 
     function mint(address to, uint256 amount) public  {
@@ -22,15 +23,15 @@ contract DegenDealsERC20 is Initializable, ERC20, IDegenDealsERC20 {
         _mint(to, amount);
     }
 
-    function name() public pure override(ERC20, IDegenDealsERC20) returns (string memory) {
+    function name() public pure override(ERC20, IDeDealERC20) returns (string memory) {
         return "Degen Deals Token";
     }
 
-    function symbol() public pure override(ERC20, IDegenDealsERC20) returns (string memory) {
+    function symbol() public pure override(ERC20, IDeDealERC20) returns (string memory) {
         return "DeDEAL";
     }
 
-    function decimals() public pure override(ERC20, IDegenDealsERC20) returns (uint8) {
+    function decimals() public pure override(ERC20, IDeDealERC20) returns (uint8) {
         return 18;
     }
 

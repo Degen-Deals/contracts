@@ -8,9 +8,9 @@ import "@openzeppelin/contracts/token/ERC1155/utils/ERC1155Holder.sol";
 import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import "./interfaces/ERC4337/IEntryPoint.sol";
 import "./interfaces/ERC4337/PackedUserOperation.sol";
-import "./interfaces/IDegenDealsERC721.sol";
-import "./interfaces/IDegenDealsERC6551Account.sol";
-import "./interfaces/IDegenDealsERC6551Registry.sol";
+import "./interfaces/IDeDealsERC721.sol";
+import "./interfaces/IDeDealsERC6551Account.sol";
+import "./interfaces/IDeDealsERC6551Registry.sol";
 import "./abstract/ERC4337/ERC4337Account.sol";
 import "./abstract/ERC4337/UserOperationLib.sol";
 import "./abstract/ERC6551/ERC6551Account.sol";
@@ -22,16 +22,16 @@ contract DegenDealsERC6551Account is
     ERC1155Holder,
     ERC4337Account,
     ERC6551Account,
-    IDegenDealsERC6551Account
+    IDeDealsERC6551Account
 {
     using UserOperationLib for PackedUserOperation;
     using SafeERC20 for IERC20;
 
     /// @dev address of ERC6551 registry
-    IDegenDealsERC6551Registry public erc6551Registry;
+    IDeDealsERC6551Registry public erc6551Registry;
 
     /// @dev address of DegenDeals collection
-    IDegenDealsERC721 public degenDeals;
+    IDeDealsERC721 public degenDeals;
 
     /// @dev which dealId is associated with this account
     uint256 public dealId;
@@ -42,7 +42,7 @@ contract DegenDealsERC6551Account is
         uint256 dealId_
     ) public virtual initializer() {
         __ERC4337_init(entryPoint_);
-        erc6551Registry = IDegenDealsERC6551Registry(erc6551Registry_);
+        erc6551Registry = IDeDealsERC6551Registry(erc6551Registry_);
         degenDeals = erc6551Registry.degenDeals();
         dealId = dealId_;
     }
@@ -142,7 +142,7 @@ contract DegenDealsERC6551Account is
         data;
         if (msg.sender != address(degenDeals)) revert NotGegenDeals(address(degenDeals), msg.sender);
 
-        IDegenDealsERC721.DealData memory dealData = degenDeals.getDeal(dealId);
+        IDeDealsERC721.DealData memory dealData = degenDeals.getDeal(dealId);
         IERC20 paymentToken = dealData.paymentToken;
         (,uint256 fundAmount,) = degenDeals.calcFundAmount(dealId);
         paymentToken.safeTransferFrom(msg.sender, address(this), fundAmount);
@@ -155,23 +155,38 @@ contract DegenDealsERC6551Account is
     function pay(bytes memory data) public virtual override {
         data;
         if (msg.sender != address(degenDeals)) revert NotGegenDeals(address(degenDeals), msg.sender);
-        IDegenDealsERC721.DealData memory dealData = degenDeals.getDeal(dealId);
+        IDeDealsERC721.DealData memory dealData = degenDeals.getDeal(dealId);
         IERC20 paymentToken = dealData.paymentToken;
         uint256 paymentAmount = dealData.paymentAmount;
-        paymentToken.safeTransferFrom(msg.sender, address(this), paymentAmount);
+        paymentToken.safeTransferFrom(dealData.obligee, address(this), paymentAmount);
 
         /// any code / aml checks / defi integration/ .... / data parsing
 
-        // for example we make instant transfer to obligor
+        // for example we make instant transfer to owner of NFT
         address ownerOf = degenDeals.ownerOf(dealId);
         paymentToken.safeTransfer(ownerOf, paymentAmount);
     }
 
-    function deal(bytes memory data) public virtual override {
+    function deal(bytes memory data) public virtual override returns (bool obligorDeal, bool beneficiaryDeal) {
         data;
         if (msg.sender != address(degenDeals)) revert NotGegenDeals(address(degenDeals), msg.sender);
-        /// do 
+        obligorDeal = true;
+        beneficiaryDeal = true;
     }
+
+    function arbitrage(bytes memory data) public virtual override {
+        data;
+        if (msg.sender != address(degenDeals)) revert NotGegenDeals(address(degenDeals), msg.sender);
+
+    }
+
+    function resolve(bytes memory data) public virtual override {
+       data;
+       if (msg.sender != address(degenDeals)) revert NotGegenDeals(address(degenDeals), msg.sender);
+
+    }
+
+
 
     function onERC721Received(
         address operator,

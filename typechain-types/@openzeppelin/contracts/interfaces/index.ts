@@ -7,3 +7,4 @@ export type { IERC1271 } from "./IERC1271";
 export type { IERC1967 } from "./IERC1967";
 export type { IERC2981 } from "./IERC2981";
 export type { IERC4906 } from "./IERC4906";
+export type { IERC5267 } from "./IERC5267";

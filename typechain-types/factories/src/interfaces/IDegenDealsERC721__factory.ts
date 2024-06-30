@@ -11,6 +11,11 @@ import type {
 const _abi = [
   {
     inputs: [],
+    name: "DealAccountArbitrageFailed",
+    type: "error",
+  },
+  {
+    inputs: [],
     name: "DealAccountDealFailed",
     type: "error",
   },
@@ -22,6 +27,11 @@ const _abi = [
   {
     inputs: [],
     name: "DealAccountPaymentFailed",
+    type: "error",
+  },
+  {
+    inputs: [],
+    name: "DealAccountResolveFailed",
     type: "error",
   },
   {
@@ -57,13 +67,35 @@ const _abi = [
     type: "error",
   },
   {
-    inputs: [],
+    inputs: [
+      {
+        internalType: "uint256",
+        name: "dealId",
+        type: "uint256",
+      },
+    ],
     name: "DealUnderArbitrage",
     type: "error",
   },
   {
-    inputs: [],
-    name: "ForbiddenToChangeObligee",
+    inputs: [
+      {
+        internalType: "uint256",
+        name: "iteration",
+        type: "uint256",
+      },
+      {
+        internalType: "uint256",
+        name: "period",
+        type: "uint256",
+      },
+      {
+        internalType: "int256",
+        name: "periodShift",
+        type: "int256",
+      },
+    ],
+    name: "InvalidPeriodShift",
     type: "error",
   },
   {
@@ -121,6 +153,16 @@ const _abi = [
         name: "dealId",
         type: "uint256",
       },
+      {
+        internalType: "address",
+        name: "obligee",
+        type: "address",
+      },
+      {
+        internalType: "address",
+        name: "sender",
+        type: "address",
+      },
     ],
     name: "NotObligeeOfDeal",
     type: "error",
@@ -142,6 +184,16 @@ const _abi = [
         internalType: "uint256",
         name: "dealId",
         type: "uint256",
+      },
+      {
+        internalType: "address",
+        name: "obligor",
+        type: "address",
+      },
+      {
+        internalType: "address",
+        name: "sender",
+        type: "address",
       },
     ],
     name: "NotObligorOfDeal",
@@ -392,6 +444,12 @@ const _abi = [
         name: "paymentAmount",
         type: "uint256",
       },
+      {
+        indexed: false,
+        internalType: "address",
+        name: "receiver",
+        type: "address",
+      },
     ],
     name: "Pay",
     type: "event",
@@ -566,6 +624,55 @@ const _abi = [
   {
     inputs: [
       {
+        internalType: "string",
+        name: "offerHash",
+        type: "string",
+      },
+      {
+        internalType: "address",
+        name: "paymentToken",
+        type: "address",
+      },
+      {
+        internalType: "uint256",
+        name: "paymentAmount",
+        type: "uint256",
+      },
+      {
+        internalType: "uint256",
+        name: "period",
+        type: "uint256",
+      },
+      {
+        internalType: "address",
+        name: "obligor",
+        type: "address",
+      },
+      {
+        internalType: "address",
+        name: "erc6551Account",
+        type: "address",
+      },
+    ],
+    name: "create",
+    outputs: [
+      {
+        internalType: "uint256",
+        name: "dealId",
+        type: "uint256",
+      },
+      {
+        internalType: "address",
+        name: "dealAccount",
+        type: "address",
+      },
+    ],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
         internalType: "uint256",
         name: "dealId",
         type: "uint256",
@@ -682,7 +789,7 @@ const _abi = [
           },
           {
             internalType: "bool",
-            name: "obligeeDeal",
+            name: "beneficiaryDeal",
             type: "bool",
           },
           {
@@ -699,6 +806,97 @@ const _abi = [
         internalType: "struct IDegenDealsERC721.DealData",
         name: "",
         type: "tuple",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
+        internalType: "uint256",
+        name: "dealIdFrom",
+        type: "uint256",
+      },
+      {
+        internalType: "uint256",
+        name: "dealIdTo",
+        type: "uint256",
+      },
+    ],
+    name: "getDeals",
+    outputs: [
+      {
+        components: [
+          {
+            internalType: "address",
+            name: "minter",
+            type: "address",
+          },
+          {
+            internalType: "address",
+            name: "obligor",
+            type: "address",
+          },
+          {
+            internalType: "string",
+            name: "offerHash",
+            type: "string",
+          },
+          {
+            internalType: "contract IERC20",
+            name: "paymentToken",
+            type: "address",
+          },
+          {
+            internalType: "uint256",
+            name: "paymentAmount",
+            type: "uint256",
+          },
+          {
+            internalType: "uint256",
+            name: "period",
+            type: "uint256",
+          },
+          {
+            internalType: "address",
+            name: "dealAccount",
+            type: "address",
+          },
+          {
+            internalType: "uint256",
+            name: "deadline",
+            type: "uint256",
+          },
+          {
+            internalType: "address",
+            name: "obligee",
+            type: "address",
+          },
+          {
+            internalType: "bool",
+            name: "obligorDeal",
+            type: "bool",
+          },
+          {
+            internalType: "bool",
+            name: "beneficiaryDeal",
+            type: "bool",
+          },
+          {
+            internalType: "address",
+            name: "arbitrator",
+            type: "address",
+          },
+          {
+            internalType: "enum IDegenDealsERC721.DealStatus",
+            name: "status",
+            type: "uint8",
+          },
+        ],
+        internalType: "struct IDegenDealsERC721.DealData[]",
+        name: "dealDatas",
+        type: "tuple[]",
       },
     ],
     stateMutability: "view",
@@ -802,6 +1000,11 @@ const _abi = [
         internalType: "uint256",
         name: "dealId",
         type: "uint256",
+      },
+      {
+        internalType: "address",
+        name: "beneficiary",
+        type: "address",
       },
       {
         internalType: "bytes",
@@ -923,6 +1126,11 @@ const _abi = [
         internalType: "uint256[]",
         name: "principalAmounts",
         type: "uint256[]",
+      },
+      {
+        internalType: "int256[]",
+        name: "periodShifts",
+        type: "int256[]",
       },
     ],
     name: "split",

@@ -1,6 +1,7 @@
 import { HardhatUserConfig } from "hardhat/config";
 import "@nomicfoundation/hardhat-toolbox";
 import "@nomicfoundation/hardhat-foundry";
+import "hardhat-contract-sizer";
 const { path } = require('path');
 import dotenv from 'dotenv';
 dotenv.config();
@@ -22,9 +23,17 @@ const config: HardhatUserConfig = {
     settings: {
       optimizer: {
         enabled: true,
-        runs: 200
-      }
+        runs: 200,
+      },
+      viaIR: true,
     }
+    
+  },
+  contractSizer: {
+    alphaSort: true,
+    disambiguatePaths: false,
+    runOnCompile: true,
+    strict: true,
   },
   paths: {
     sources: "./src",

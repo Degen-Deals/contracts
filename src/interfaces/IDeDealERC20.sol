@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-interface IDegenDealsERC20 is IERC20{
+interface IDeDealERC20 is IERC20{
   
     /// @dev Returns the name of token
     function name() external view returns (string memory);

@@ -1,20 +1,20 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import "./interfaces/IDegenDealsERC721.sol";
 import "./interfaces/ERC4337/IEntryPoint.sol";
-import "./interfaces/IDegenDealsERC6551Account.sol";
-import "./interfaces/IDegenDealsERC6551Registry.sol";
+import "./interfaces/IDeDealsERC721.sol";
+import "./interfaces/IDeDealsERC6551Account.sol";
+import "./interfaces/IDeDealsERC6551Registry.sol";
 import "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 
-contract DegenDealsERC6551Registry is Initializable, IDegenDealsERC6551Registry {
+contract DegenDealsERC6551Registry is Initializable, IDeDealsERC6551Registry {
 
     /// @dev address to degen deals NFT collection
-    IDegenDealsERC721 public degenDeals;
+    IDeDealsERC721 public degenDeals;
 
     /// @dev default account for NFT
-    IDegenDealsERC6551Account public degenDealsERC6551Account;
+    IDeDealsERC6551Account public degenDealsERC6551Account;
 
     IEntryPoint public entryPoint;
 
@@ -32,8 +32,8 @@ contract DegenDealsERC6551Registry is Initializable, IDegenDealsERC6551Registry 
         address entryPoint_
     ) public initializer() {
         owner = msg.sender;
-        degenDeals = IDegenDealsERC721(degenDeals_);
-        degenDealsERC6551Account = IDegenDealsERC6551Account(payable(degenDealsERC6551Account_));
+        degenDeals = IDeDealsERC721(degenDeals_);
+        degenDealsERC6551Account = IDeDealsERC6551Account(payable(degenDealsERC6551Account_));
         entryPoint = IEntryPoint(entryPoint_);
     }
 
@@ -48,8 +48,8 @@ contract DegenDealsERC6551Registry is Initializable, IDegenDealsERC6551Registry 
     }
 
     function setDegenDealsERC6551Account(address degenDealsERC6551Account_) public {
-        require(msg.sender == owner, "DegenDealsERC6551Registry: not owner");
-        degenDealsERC6551Account = IDegenDealsERC6551Account(payable(degenDealsERC6551Account_));
+        require(msg.sender == owner, "DeDealsERC6551Registry: not owner");
+        degenDealsERC6551Account = IDeDealsERC6551Account(payable(degenDealsERC6551Account_));
     }
 
     function createAccount(

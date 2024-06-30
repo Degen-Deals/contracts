@@ -35,7 +35,7 @@ export declare namespace IDegenDealsERC721 {
     deadline: BigNumberish;
     obligee: AddressLike;
     obligorDeal: boolean;
-    obligeeDeal: boolean;
+    beneficiaryDeal: boolean;
     arbitrator: AddressLike;
     status: BigNumberish;
   };
@@ -51,7 +51,7 @@ export declare namespace IDegenDealsERC721 {
     deadline: bigint,
     obligee: string,
     obligorDeal: boolean,
-    obligeeDeal: boolean,
+    beneficiaryDeal: boolean,
     arbitrator: string,
     status: bigint
   ] & {
@@ -65,7 +65,7 @@ export declare namespace IDegenDealsERC721 {
     deadline: bigint;
     obligee: string;
     obligorDeal: boolean;
-    obligeeDeal: boolean;
+    beneficiaryDeal: boolean;
     arbitrator: string;
     status: bigint;
   };
@@ -77,10 +77,12 @@ export interface IDegenDealsERC721Interface extends Interface {
       | "approve"
       | "balanceOf"
       | "calcFundAmount"
+      | "create"
       | "designate"
       | "fund"
       | "getApproved"
       | "getDeal"
+      | "getDeals"
       | "isApprovedForAll"
       | "mint"
       | "ownerOf"
@@ -126,6 +128,17 @@ export interface IDegenDealsERC721Interface extends Interface {
     values: [BigNumberish]
   ): string;
   encodeFunctionData(
+    functionFragment: "create",
+    values: [
+      string,
+      AddressLike,
+      BigNumberish,
+      BigNumberish,
+      AddressLike,
+      AddressLike
+    ]
+  ): string;
+  encodeFunctionData(
     functionFragment: "designate",
     values: [BigNumberish, BigNumberish]
   ): string;
@@ -140,6 +153,10 @@ export interface IDegenDealsERC721Interface extends Interface {
   encodeFunctionData(
     functionFragment: "getDeal",
     values: [BigNumberish]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "getDeals",
+    values: [BigNumberish, BigNumberish]
   ): string;
   encodeFunctionData(
     functionFragment: "isApprovedForAll",
@@ -162,7 +179,7 @@ export interface IDegenDealsERC721Interface extends Interface {
   ): string;
   encodeFunctionData(
     functionFragment: "pay",
-    values: [BigNumberish, BytesLike]
+    values: [BigNumberish, AddressLike, BytesLike]
   ): string;
   encodeFunctionData(
     functionFragment: "royaltyInfo",
@@ -182,7 +199,7 @@ export interface IDegenDealsERC721Interface extends Interface {
   ): string;
   encodeFunctionData(
     functionFragment: "split",
-    values: [BigNumberish, BigNumberish[]]
+    values: [BigNumberish, BigNumberish[], BigNumberish[]]
   ): string;
   encodeFunctionData(
     functionFragment: "supportsInterface",
@@ -199,6 +216,7 @@ export interface IDegenDealsERC721Interface extends Interface {
     functionFragment: "calcFundAmount",
     data: BytesLike
   ): Result;
+  decodeFunctionResult(functionFragment: "create", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "designate", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "fund", data: BytesLike): Result;
   decodeFunctionResult(
@@ -206,6 +224,7 @@ export interface IDegenDealsERC721Interface extends Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "getDeal", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "getDeals", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "isApprovedForAll",
     data: BytesLike
@@ -404,19 +423,22 @@ export namespace PayEvent {
     dealId: BigNumberish,
     obligee: AddressLike,
     token: AddressLike,
-    paymentAmount: BigNumberish
+    paymentAmount: BigNumberish,
+    receiver: AddressLike
   ];
   export type OutputTuple = [
     dealId: bigint,
     obligee: string,
     token: string,
-    paymentAmount: bigint
+    paymentAmount: bigint,
+    receiver: string
   ];
   export interface OutputObject {
     dealId: bigint;
     obligee: string;
     token: string;
     paymentAmount: bigint;
+    receiver: string;
   }
   export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
   export type Filter = TypedDeferredTopicFilter<Event>;
@@ -573,6 +595,19 @@ export interface IDegenDealsERC721 extends BaseContract {
     "view"
   >;
 
+  create: TypedContractMethod<
+    [
+      offerHash: string,
+      paymentToken: AddressLike,
+      paymentAmount: BigNumberish,
+      period: BigNumberish,
+      obligor: AddressLike,
+      erc6551Account: AddressLike
+    ],
+    [[bigint, string] & { dealId: bigint; dealAccount: string }],
+    "nonpayable"
+  >;
+
   designate: TypedContractMethod<
     [dealId: BigNumberish, dealDiscountPercent_: BigNumberish],
     [void],
@@ -590,6 +625,12 @@ export interface IDegenDealsERC721 extends BaseContract {
   getDeal: TypedContractMethod<
     [dealId: BigNumberish],
     [IDegenDealsERC721.DealDataStructOutput],
+    "view"
+  >;
+
+  getDeals: TypedContractMethod<
+    [dealIdFrom: BigNumberish, dealIdTo: BigNumberish],
+    [IDegenDealsERC721.DealDataStructOutput[]],
     "view"
   >;
 
@@ -615,7 +656,7 @@ export interface IDegenDealsERC721 extends BaseContract {
   ownerOf: TypedContractMethod<[tokenId: BigNumberish], [string], "view">;
 
   pay: TypedContractMethod<
-    [dealId: BigNumberish, data: BytesLike],
+    [dealId: BigNumberish, beneficiary: AddressLike, data: BytesLike],
     [void],
     "nonpayable"
   >;
@@ -650,7 +691,11 @@ export interface IDegenDealsERC721 extends BaseContract {
   >;
 
   split: TypedContractMethod<
-    [dealId: BigNumberish, principalAmounts: BigNumberish[]],
+    [
+      dealId: BigNumberish,
+      principalAmounts: BigNumberish[],
+      periodShifts: BigNumberish[]
+    ],
     [[bigint, bigint] & { splitDealIdFrom: bigint; splitDealIdTo: bigint }],
     "nonpayable"
   >;
@@ -695,6 +740,20 @@ export interface IDegenDealsERC721 extends BaseContract {
     "view"
   >;
   getFunction(
+    nameOrSignature: "create"
+  ): TypedContractMethod<
+    [
+      offerHash: string,
+      paymentToken: AddressLike,
+      paymentAmount: BigNumberish,
+      period: BigNumberish,
+      obligor: AddressLike,
+      erc6551Account: AddressLike
+    ],
+    [[bigint, string] & { dealId: bigint; dealAccount: string }],
+    "nonpayable"
+  >;
+  getFunction(
     nameOrSignature: "designate"
   ): TypedContractMethod<
     [dealId: BigNumberish, dealDiscountPercent_: BigNumberish],
@@ -716,6 +775,13 @@ export interface IDegenDealsERC721 extends BaseContract {
   ): TypedContractMethod<
     [dealId: BigNumberish],
     [IDegenDealsERC721.DealDataStructOutput],
+    "view"
+  >;
+  getFunction(
+    nameOrSignature: "getDeals"
+  ): TypedContractMethod<
+    [dealIdFrom: BigNumberish, dealIdTo: BigNumberish],
+    [IDegenDealsERC721.DealDataStructOutput[]],
     "view"
   >;
   getFunction(
@@ -745,7 +811,7 @@ export interface IDegenDealsERC721 extends BaseContract {
   getFunction(
     nameOrSignature: "pay"
   ): TypedContractMethod<
-    [dealId: BigNumberish, data: BytesLike],
+    [dealId: BigNumberish, beneficiary: AddressLike, data: BytesLike],
     [void],
     "nonpayable"
   >;
@@ -785,7 +851,11 @@ export interface IDegenDealsERC721 extends BaseContract {
   getFunction(
     nameOrSignature: "split"
   ): TypedContractMethod<
-    [dealId: BigNumberish, principalAmounts: BigNumberish[]],
+    [
+      dealId: BigNumberish,
+      principalAmounts: BigNumberish[],
+      periodShifts: BigNumberish[]
+    ],
     [[bigint, bigint] & { splitDealIdFrom: bigint; splitDealIdTo: bigint }],
     "nonpayable"
   >;
@@ -1006,7 +1076,7 @@ export interface IDegenDealsERC721 extends BaseContract {
       MintEvent.OutputObject
     >;
 
-    "Pay(uint256,address,address,uint256)": TypedContractEvent<
+    "Pay(uint256,address,address,uint256,address)": TypedContractEvent<
       PayEvent.InputTuple,
       PayEvent.OutputTuple,
       PayEvent.OutputObject

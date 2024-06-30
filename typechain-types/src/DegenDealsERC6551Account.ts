@@ -100,6 +100,7 @@ export type PackedUserOperationStructOutput = [
 export interface DegenDealsERC6551AccountInterface extends Interface {
   getFunction(
     nameOrSignature:
+      | "arbitrage"
       | "deal"
       | "dealId"
       | "degenDeals"
@@ -117,6 +118,7 @@ export interface DegenDealsERC6551AccountInterface extends Interface {
       | "onERC1155Received"
       | "onERC721Received"
       | "pay"
+      | "resolve"
       | "state"
       | "supportsInterface"
       | "token"
@@ -127,6 +129,10 @@ export interface DegenDealsERC6551AccountInterface extends Interface {
 
   getEvent(nameOrSignatureOrTopic: "Initialized"): EventFragment;
 
+  encodeFunctionData(
+    functionFragment: "arbitrage",
+    values: [BytesLike]
+  ): string;
   encodeFunctionData(functionFragment: "deal", values: [BytesLike]): string;
   encodeFunctionData(functionFragment: "dealId", values?: undefined): string;
   encodeFunctionData(
@@ -186,6 +192,7 @@ export interface DegenDealsERC6551AccountInterface extends Interface {
     values: [AddressLike, AddressLike, BigNumberish, BytesLike]
   ): string;
   encodeFunctionData(functionFragment: "pay", values: [BytesLike]): string;
+  encodeFunctionData(functionFragment: "resolve", values: [BytesLike]): string;
   encodeFunctionData(functionFragment: "state", values?: undefined): string;
   encodeFunctionData(
     functionFragment: "supportsInterface",
@@ -205,6 +212,7 @@ export interface DegenDealsERC6551AccountInterface extends Interface {
     values: [PackedUserOperationStruct, BytesLike, BigNumberish]
   ): string;
 
+  decodeFunctionResult(functionFragment: "arbitrage", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "deal", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "dealId", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "degenDeals", data: BytesLike): Result;
@@ -246,6 +254,7 @@ export interface DegenDealsERC6551AccountInterface extends Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "pay", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "resolve", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "state", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "supportsInterface",
@@ -321,7 +330,13 @@ export interface DegenDealsERC6551Account extends BaseContract {
     event?: TCEvent
   ): Promise<this>;
 
-  deal: TypedContractMethod<[data: BytesLike], [void], "nonpayable">;
+  arbitrage: TypedContractMethod<[data: BytesLike], [void], "nonpayable">;
+
+  deal: TypedContractMethod<
+    [data: BytesLike],
+    [[boolean, boolean] & { obligorDeal: boolean; beneficiaryDeal: boolean }],
+    "nonpayable"
+  >;
 
   dealId: TypedContractMethod<[], [bigint], "view">;
 
@@ -417,6 +432,8 @@ export interface DegenDealsERC6551Account extends BaseContract {
 
   pay: TypedContractMethod<[data: BytesLike], [void], "nonpayable">;
 
+  resolve: TypedContractMethod<[data: BytesLike], [void], "nonpayable">;
+
   state: TypedContractMethod<[], [bigint], "view">;
 
   supportsInterface: TypedContractMethod<
@@ -456,8 +473,15 @@ export interface DegenDealsERC6551Account extends BaseContract {
   ): T;
 
   getFunction(
-    nameOrSignature: "deal"
+    nameOrSignature: "arbitrage"
   ): TypedContractMethod<[data: BytesLike], [void], "nonpayable">;
+  getFunction(
+    nameOrSignature: "deal"
+  ): TypedContractMethod<
+    [data: BytesLike],
+    [[boolean, boolean] & { obligorDeal: boolean; beneficiaryDeal: boolean }],
+    "nonpayable"
+  >;
   getFunction(
     nameOrSignature: "dealId"
   ): TypedContractMethod<[], [bigint], "view">;
@@ -563,6 +587,9 @@ export interface DegenDealsERC6551Account extends BaseContract {
   >;
   getFunction(
     nameOrSignature: "pay"
+  ): TypedContractMethod<[data: BytesLike], [void], "nonpayable">;
+  getFunction(
+    nameOrSignature: "resolve"
   ): TypedContractMethod<[data: BytesLike], [void], "nonpayable">;
   getFunction(
     nameOrSignature: "state"

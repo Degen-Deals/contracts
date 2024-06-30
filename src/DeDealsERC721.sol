@@ -8,24 +8,26 @@ import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
-import "./interfaces/IDegenDealsERC20.sol";
-import "./interfaces/IDegenDealsERC721.sol";
-import "./interfaces/IDegenDealsERC6551Account.sol";
-import "./interfaces/IDegenDealsERC6551Registry.sol";
+import "./interfaces/IDeDealERC20.sol";
+import "./interfaces/IDeDealsERC721.sol";
+import "./interfaces/IDeDealsERC6551Account.sol";
+import "./interfaces/IDeDealsERC6551Registry.sol";
+import "./interfaces/IDeDealsAffilatesERC721.sol";
+import "./interfaces/IDeDealsSoulBoundTokenERC721.sol";
 
 /**
+ * @title Non Fungible Token of Deals
  * @notice Tokenization of obligation and rights with associated smart-contract accounts
- * @author 1NFT.agency (aleks@1nft.agency)
- * @author Vakhtanh Chikhladze (the.vaho1337@gmail.com)
- * @author Petro Yaremenko ()
+ * @author Alex Chusov - CEO (1NFT.agency - aleks@1nft.agency)
+ * @author Vakhtanh Chikhladze - CTO (the.vaho1337@gmail.com)
+ * @author Petro Yaremenko - Lead Dev (p.yaremenko@ukr.net)
  */
-contract DegenDealsERC721 is Initializable, AccessControl, ERC721, IDegenDealsERC721 {
+contract DeDealsERC721 is Initializable, AccessControl, ERC721, IDeDealsERC721 {
     using SafeERC20 for IERC20;
 
     /// @dev DEGEN_BOSS_ROLE
     bytes32 public constant DEGEN_BOSS_ROLE = keccak256("DEGEN_BOSS_ROLE");
-    /// @dev MEMBER is obligor and obligee
-    bytes32 public constant MEMBER_ROLE = keccak256("MEMBER_ROLE");
+
     /// @dev ARBITRATOR_ROLE is trusted arbitrors
     bytes32 public constant ARBITRATOR_ROLE = keccak256("ARBITRATOR_ROLE");
 
@@ -38,17 +40,30 @@ contract DegenDealsERC721 is Initializable, AccessControl, ERC721, IDegenDealsER
     /// @dev link for terms and conditions
     string public defaultURI;
 
+    /// @dev address of platform wallet
     address public platformWallet;
+
+    /// @dev address of legal wallet
     address public legalWallet;
-    address public kycWallet;
 
     /// @dev the platform token
-    IDegenDealsERC20 public dedeal;
+    IDeDealERC20 public dedeal;
 
     /// @dev ERC6551 registry
-    IDegenDealsERC6551Registry public dedealsERC6551Registry;
+    IDeDealsERC6551Registry public dedealsERC6551Registry;
 
-    /// @dev list fee percent
+    /// @dev address of degen deals soul bound token 
+    IDeDealsSoulBoundTokenERC721 public dedealsSBT;
+
+    /// @dev Degen Deals affilates 
+    IDeDealsAffilatesERC721 public dedealsAffilates;
+
+    /// FEES PERCENTS
+
+    /// @dev create fee percent
+    uint256 public createFeePercent;
+
+    /// @dev mint fee percent
     uint256 public mintFeePercent;
     
     /// @dev buy fee percent
@@ -66,11 +81,16 @@ contract DegenDealsERC721 is Initializable, AccessControl, ERC721, IDegenDealsER
     /// @dev royalty percent
     uint256 public royaltyPercent;
 
-    /// @dev legal share of fee
-    uint256 public legalFeeShare;
+    /// SHARES OF FEE
 
     /// @dev platform share of fee
     uint256 public platformFeeShare;
+
+    /// @dev legal share of fee
+    uint256 public legalFeeShare;
+
+    /// @dev affilate share of fee
+    uint256 public affilateFeeShare;
 
     /// @dev the sum of all fees
     uint256 public totalFeeShare;
@@ -102,10 +122,11 @@ contract DegenDealsERC721 is Initializable, AccessControl, ERC721, IDegenDealsER
 
     constructor(
         address _dedeal,
+        address _dedealsSBT,
+        address _dedealsAffilates,
         address _dedealsERC6551Registry,
         address _platformWallet,
-        address _legalWallet,
-        address _kycWallet
+        address _legalWallet
     ) ERC721("Degen Deals Collection", "DeDEALS") { 
         address _admin = msg.sender;
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
@@ -115,13 +136,15 @@ contract DegenDealsERC721 is Initializable, AccessControl, ERC721, IDegenDealsER
 
         totalDeals = 0;
         defaultURI = "";
-        dedeal = IDegenDealsERC20(_dedeal);
-        dedealsERC6551Registry = IDegenDealsERC6551Registry(_dedealsERC6551Registry);
+        dedeal = IDeDealERC20(_dedeal);
+        dedealsSBT = IDeDealsSoulBoundTokenERC721(_dedealsSBT);
+        dedealsAffilates = IDeDealsAffilatesERC721(_dedealsAffilates);
+        dedealsERC6551Registry = IDeDealsERC6551Registry(_dedealsERC6551Registry);
 
         platformWallet = _platformWallet;
         legalWallet = _legalWallet;
-        kycWallet = _kycWallet;
 
+        createFeePercent = 500; // 0.5%
         mintFeePercent = 500;   // 0.5%
         splitFeePercent = 500;  // 0.5%
         payFeePercent = 500;    // 0.5% 
@@ -130,8 +153,10 @@ contract DegenDealsERC721 is Initializable, AccessControl, ERC721, IDegenDealsER
 
         platformFeeShare = 500;
         legalFeeShare = 500;
-        // 500 + 500 = 1000
-        totalFeeShare = platformFeeShare + legalFeeShare;
+        affilateFeeShare = 500;
+
+        // 500 + 500 + 500 = 1500
+        totalFeeShare = platformFeeShare + legalFeeShare + affilateFeeShare;
     }
 
     /// @dev can be set only by DEGEN_BOSS
@@ -153,13 +178,6 @@ contract DegenDealsERC721 is Initializable, AccessControl, ERC721, IDegenDealsER
         legalWallet = legalWallet_;
     }
 
-    /// @notice set new KYC wallet for verification of KYC/KYB
-    /// @param kycWallet_ address of kyc wallet 
-    function setKYCWallet(address kycWallet_) public onlyRole(DEGEN_BOSS_ROLE) {
-        /// some DAO logic... 
-        kycWallet = kycWallet_;
-    }
-
     /// @notice modify token as payment
     /// @param token address of payment token
     /// @param _isPaymentToken if true, than make eligible. if false, than not eligible
@@ -168,30 +186,79 @@ contract DegenDealsERC721 is Initializable, AccessControl, ERC721, IDegenDealsER
     }
 
     /// @notice adjusting the shares
-    function adjustShares(uint256 _legalFeeShare, uint256 _platformFeeShare) public onlyRole(DEGEN_BOSS_ROLE) {
-        uint256 _totalFeeShare = _legalFeeShare + _platformFeeShare;
+    function adjustShares(uint256 _platformFeeShare, uint256 _legalFeeShare) public onlyRole(DEGEN_BOSS_ROLE) {
+        uint256 _totalFeeShare = _platformFeeShare + _legalFeeShare;
         totalFeeShare = _totalFeeShare;
-        legalFeeShare = _legalFeeShare;
         platformFeeShare = _platformFeeShare;
+        legalFeeShare = _legalFeeShare;
     }
 
-    /// @notice grant the member
-    function grantMember(address member, bytes memory signature) public {
-        signature;
-        _grantRole(MEMBER_ROLE, member);
+    /// @notice obligee creates the deal and the obligor should to accept it
+    function create(
+        string memory offerHash,
+        address paymentToken,
+        uint256 paymentAmount,
+        uint256 period,
+        address obligor,
+        address erc6551Account
+    ) public override returns (uint256 dealId, address dealAccount) {
+        if (!isPaymentToken[paymentToken]) revert NotPaymentToken(paymentToken);
+        _chargeAndDistributeCreateFee(IERC20(paymentToken), paymentAmount);
+        dealId = totalDeals;
+        ++totalDeals;
+
+        address obligee = msg.sender;
+        dealAccount = dedealsERC6551Registry.createDealAccount(dealId, erc6551Account);
+        deals[dealId] = DealData({
+            minter: msg.sender,
+            obligor: obligor,
+            offerHash: offerHash,
+            paymentToken: IERC20(paymentToken),
+            paymentAmount: paymentAmount,
+            period: period,
+            dealAccount: dealAccount,
+            deadline: 0,
+            obligee: obligee,
+            obligorDeal: false,
+            beneficiaryDeal: false,
+            arbitrator: address(0),
+            status: DealStatus.CREATED
+        });
+        parentDealId[dealId] = dealId;
     }
 
-    /// @notice become member by 
-    function becomeMember(bytes memory signature) public {
-        signature;
-        _grantRole(MEMBER_ROLE, msg.sender);
+    /// @notice obligor confirm the created deal by obligee
+    /// @param dealId id of the deal
+    function mint(uint256 dealId) public {
+        DealData storage dealData = deals[dealId];
+        if (dealData.status != DealStatus.CREATED) {
+            revert OnlyCreatedStatus(dealId);
+        }
+        if (dealData.obligor == address(0)) {
+            dealData.obligor = msg.sender;    
+        } 
+        else if (dealData.obligor == msg.sender) {
+            
+        }
+        else {
+            revert NotObligorOfDeal(dealId, dealData.obligor, msg.sender);
+        }
+        _mint(dealData.obligor, dealId);
+        dealData.deadline = block.timestamp + dealData.period;
+        dealData.status = DealStatus.MINTED;
+        emit Mint(dealId, dealData.obligor, dealData.obligee, dealData.dealAccount, dealData.offerHash, address(dealData.paymentToken), dealData.paymentAmount, dealData.period);
     }
 
-    function quitFromMember() public onlyRole(MEMBER_ROLE) {
-        _revokeRole(MEMBER_ROLE, msg.sender);
+    /// @dev internal function for calc create fee amount, transfer from the mint amount and distribute fee
+    function _chargeAndDistributeCreateFee(IERC20 paymentToken, uint256 paymentAmount) public {
+        uint256 createFee = calcCreateFee(paymentAmount);
+        if (createFee > 0) {
+            paymentToken.safeTransferFrom(msg.sender, address(this), createFee);
+            _distributeFee(paymentToken, createFee, address(0));
+        }
     }
 
-    /// @notice mints the deal and deploy associated ERC6551 account
+    /// @notice obligor mints the deal and deploy associated ERC6551 account
     /// @dev can be called only by members
     /// @param offerHash the hash of the document
     /// @param paymentToken address of payment token
@@ -206,8 +273,8 @@ contract DegenDealsERC721 is Initializable, AccessControl, ERC721, IDegenDealsER
         uint256 period,
         address obligee, 
         address erc6551Account
-    ) public override onlyRole(MEMBER_ROLE) returns (uint256 dealId, address dealAccount) {
-        require(hasRole(MEMBER_ROLE, obligee) || obligee == address(0), "DegenDealsERC721: obligee not member");
+    ) public override returns (uint256 dealId, address dealAccount) {
+        require(dedealsSBT.isSoul(obligee) || obligee == address(0), "DegenDealsERC721: obligee not member");
         if (!isPaymentToken[paymentToken]) revert NotPaymentToken(paymentToken);
         _chargeAndDistributeMintFee(IERC20(paymentToken), paymentAmount);
         dealId = totalDeals;
@@ -228,7 +295,7 @@ contract DegenDealsERC721 is Initializable, AccessControl, ERC721, IDegenDealsER
             deadline: deadline,
             obligee: obligee,
             obligorDeal: false,
-            obligeeDeal: false,
+            beneficiaryDeal: false,
             arbitrator: address(0),
             status: DealStatus.MINTED
         });
@@ -241,21 +308,25 @@ contract DegenDealsERC721 is Initializable, AccessControl, ERC721, IDegenDealsER
         uint256 mintFee = calcMintFee(paymentAmount);
         if (mintFee > 0) {
             paymentToken.safeTransferFrom(msg.sender, address(this), mintFee);
-            _distributeFee(paymentToken, mintFee);
+            _distributeFee(paymentToken, mintFee, address(0));
         }
     }
 
     /// @dev burn the dealId and mints new dealId`s
     /// @param dealId id of the deal
     /// @param paymentAmounts the array of split amounts for each deal
-    function split(uint256 dealId, uint256[] memory paymentAmounts) public override onlyRole(MEMBER_ROLE) returns (uint256 splitDealIdFrom, uint256 splitDealIdTo) {
+    function split(uint256 dealId, uint256[] memory paymentAmounts, int256[] memory periodShifts) public override returns (uint256 splitDealIdFrom, uint256 splitDealIdTo) {
         DealData storage dealData = deals[dealId];
+        require(paymentAmounts.length == periodShifts.length, "DegenDealsERC721: not equal");
         require(dealData.obligor == msg.sender, "DegenDealsERC721: split can only obligor");
         require(dealData.status == DealStatus.MINTED, "DegenDealsERC721: deal status != MINTED");
         uint256 len = paymentAmounts.length;
         require(len > 0, "DegenDealsERC721: len == 0");
         uint256 sumPaymentAmounts = 0;
         for (uint256 i = 0; i < len;) {
+            if (int256(dealData.period) + periodShifts[i] <= 0) {
+                revert InvalidPeriodShift(i, dealData.period, periodShifts[i]);
+            }
             sumPaymentAmounts += paymentAmounts[i];
             unchecked { ++i; }
         }
@@ -274,12 +345,12 @@ contract DegenDealsERC721 is Initializable, AccessControl, ERC721, IDegenDealsER
                 offerHash: dealData.offerHash,
                 paymentToken: IERC20(dealData.paymentToken),
                 paymentAmount: paymentAmounts[i],
-                period: dealData.period,
+                period: uint256(int256(dealData.period) + periodShifts[i]),
                 dealAccount: dealData.dealAccount,
                 deadline: dealData.deadline,
                 obligee: dealData.obligee,
                 obligorDeal: dealData.obligorDeal,
-                obligeeDeal: dealData.obligeeDeal,
+                beneficiaryDeal: dealData.beneficiaryDeal,
                 arbitrator: dealData.arbitrator,
                 status: DealStatus.MINTED
             });
@@ -297,8 +368,8 @@ contract DegenDealsERC721 is Initializable, AccessControl, ERC721, IDegenDealsER
     function designate(uint256 dealId, uint256 dealDiscountPercent_) public override {
         require(0 < dealDiscountPercent_ && dealDiscountPercent_ < PERCENT_DENOMINATOR, "DegenDealsERC721: discount > 100% or 0%");
         DealData storage dealData = deals[dealId];
-        require(ownerOf(dealId) == msg.sender, "DegenDealsERC721: not obligor");
         require(dealData.status == DealStatus.MINTED, "DegenDealsERC721: already paid");
+        require(ownerOf(dealId) == msg.sender, "DegenDealsERC721: not payment receiver");
         dealDiscountPercent[dealId] = dealDiscountPercent_;
         emit Designate(dealId, dealDiscountPercent_);
     }
@@ -309,20 +380,20 @@ contract DegenDealsERC721 is Initializable, AccessControl, ERC721, IDegenDealsER
     function fund(uint256 dealId, bytes memory data) public override {
         DealData storage dealData = deals[dealId];
         require(dealDiscountPercent[dealId] > 0, "DegenDealsERC721: No discount");
-        IERC20 token = dealData.paymentToken; 
+        IERC20 token = dealData.paymentToken;
         (uint256 totalAmount, uint256 amountWithDiscount, uint256 fundFee) = calcFundAmount(dealId);
         token.safeTransferFrom(msg.sender, address(this), totalAmount);
 
-        _distributeFee(token, fundFee);
+        _distributeFee(token, fundFee, dealData.obligor);
         
-        IDegenDealsERC6551Account dealAccount = IDegenDealsERC6551Account(payable(dealData.dealAccount));
+        IDeDealsERC6551Account dealAccount = IDeDealsERC6551Account(payable(dealData.dealAccount));
         token.forceApprove(address(dealAccount), amountWithDiscount);
         try dealAccount.fund(data) {
             delete dealDiscountPercent[dealId];
         } catch {
             revert DealAccountFundFailed();
         }
-        _transfer(dealData.obligor, msg.sender, dealId);
+        _transfer(ownerOf(dealId), msg.sender, dealId);
     }
 
     /// @notice the modification of transferFrom 
@@ -334,13 +405,13 @@ contract DegenDealsERC721 is Initializable, AccessControl, ERC721, IDegenDealsER
         if (dealData.status == DealStatus.DEAL || dealData.status == DealStatus.RESOLVED) {
             ERC721.transferFrom(from, to, dealId);
         } 
-        else if (dealData.status == DealStatus.ARBITRAGE_BY_OBLIGOR || dealData.status == DealStatus.ARBITRAGE_BY_OBLIGEE) {
-            revert DealUnderArbitrage();
+        else if (dealData.status == DealStatus.ARBITRAGE_BY_OBLIGOR || dealData.status == DealStatus.ARBITRAGE_BY_BENEFICIARY) {
+            revert DealUnderArbitrage(dealId);
         }
         else {
             uint256 transferFee = dealData.paymentAmount * transferFeePercent / PERCENT_DENOMINATOR;
             dealData.paymentToken.safeTransferFrom(from, address(this), transferFee);
-            _distributeFee(dealData.paymentToken, transferFee);
+            _distributeFee(dealData.paymentToken, transferFee, address(0));
             ERC721.transferFrom(from, to, dealId);
         }
     }
@@ -356,7 +427,7 @@ contract DegenDealsERC721 is Initializable, AccessControl, ERC721, IDegenDealsER
             obligorTransfer[dealId][obligor][newObligor] = true;
         }
         else if (obligorTransfer[dealId][obligor][newObligor]) {
-            IDegenDealsERC6551Account dealAccount = IDegenDealsERC6551Account(payable(dealData.dealAccount));
+            IDeDealsERC6551Account dealAccount = IDeDealsERC6551Account(payable(dealData.dealAccount));
             try dealAccount.transferObligor(data) {
                 
             } catch {
@@ -366,7 +437,7 @@ contract DegenDealsERC721 is Initializable, AccessControl, ERC721, IDegenDealsER
             delete obligorTransfer[dealId][obligor][newObligor];
         }
         else {
-            revert NotObligorOfDeal(dealId);
+            revert NotObligorOfDeal(dealId, dealData.obligor, msg.sender);
         }
     }
 
@@ -381,7 +452,7 @@ contract DegenDealsERC721 is Initializable, AccessControl, ERC721, IDegenDealsER
             obligeeTransfer[dealId][obligee][newObligee] = true;
         }
         else if (obligeeTransfer[dealId][obligee][newObligee]) {
-            IDegenDealsERC6551Account dealAccount = IDegenDealsERC6551Account(payable(dealData.dealAccount));
+            IDeDealsERC6551Account dealAccount = IDeDealsERC6551Account(payable(dealData.dealAccount));
             try dealAccount.transferObligee(data) {
 
             } catch {
@@ -391,69 +462,71 @@ contract DegenDealsERC721 is Initializable, AccessControl, ERC721, IDegenDealsER
             delete obligeeTransfer[dealId][obligee][newObligee];
         }
         else {
-            revert NotObligeeOfDeal(dealId);
+            revert NotObligeeOfDeal(dealId, dealData.obligee, msg.sender);
         }
     }
 
     /// @notice oblegee pay the offer
     /// @param dealId id of the deal
+    /// @param beneficiary the receiver of right for receiving the offer. If beneficiary == address(0), than beneficiary becomes payer
     /// @param data extra data that forwards to associated smart-contract account
-    function pay(uint256 dealId, bytes memory data) public onlyRole(MEMBER_ROLE) {
+    function pay(uint256 dealId, address beneficiary, bytes memory data) public {
         DealData storage dealData = deals[dealId];
-        require(dealData.status == DealStatus.MINTED, "DegenDealsERC721: only MINTED ");
+        require(dealData.status == DealStatus.MINTED, "DegenDealsERC721: only MINTED");
         IERC20 paymentToken = dealData.paymentToken;
-        (uint256 totalAmount, uint256 payAmount, uint256 payFee) = calcPayAmount(dealId);
-        paymentToken.safeTransferFrom(msg.sender, address(this), totalAmount);
-        
-        _distributeFee(paymentToken, payFee);
+        if (beneficiary == address(0)) { 
+            beneficiary = msg.sender;
+        }
         
         address obligee;
-        if (dealData.obligee == address(0)) { // public offer debt n0te
+        if (dealData.obligee == address(0)) { // public offer of deal
             obligee = msg.sender;
             dealData.obligee = obligee;
             dealData.deadline = block.timestamp + dealData.period;
         }
-        else if (dealData.obligee == msg.sender) { // defined obligee offer debt n0te
+        else if (dealData.obligee == msg.sender) { // defined obligee of deal
             obligee = dealData.obligee;
         }
         else {
             revert NotDealSubjectOnPay(dealId, msg.sender);
         }
-        IDegenDealsERC6551Account dealAccount = IDegenDealsERC6551Account(payable(dealData.dealAccount));
+        (uint256 totalAmount, uint256 payAmount, uint256 payFee) = calcPayAmount(dealId);
+        paymentToken.safeTransferFrom(msg.sender, address(this), totalAmount);
+        _distributeFee(paymentToken, payFee, obligee);
+
+        IDeDealsERC6551Account dealAccount = IDeDealsERC6551Account(payable(dealData.dealAccount));
         paymentToken.forceApprove(address(dealAccount), payAmount);
+        _transfer(ownerOf(dealId), beneficiary, dealId);
         try dealAccount.pay(data) {
             dealData.status = DealStatus.PAID;
-        }
-        catch {
+        } catch {
             revert DealAccountPaymentFailed(); 
         }
-        _transfer(dealData.obligor, obligee, dealId);
 
-        emit Pay(dealId, obligee, address(paymentToken), payAmount);
+        emit Pay(dealId, obligee, address(paymentToken), payAmount, beneficiary);
     }
 
     /// @notice the obligor or obligee is satisfied and confirm obligation
     /// @param dealId id of the deal
     /// @param data extra data that forwards to associated smart-contract account
-    function deal(uint256 dealId, bytes memory data) public onlyRole(MEMBER_ROLE) {
+    function deal(uint256 dealId, bytes memory data) public {
         DealData storage dealData = deals[dealId];
-        
-        require(dealData.status != DealStatus.ARBITRAGE_BY_OBLIGOR || dealData.status != DealStatus.ARBITRAGE_BY_OBLIGEE, "DegenDealsERC721: cant deal, when arbitrage is open");
-        IDegenDealsERC6551Account dealAccount = IDegenDealsERC6551Account(payable(dealData.dealAccount));
-        try dealAccount.deal(data) {
-            if (msg.sender == dealData.obligor) {
-                dealData.obligorDeal = true;
+        require(dealData.status != DealStatus.ARBITRAGE_BY_OBLIGOR || dealData.status != DealStatus.ARBITRAGE_BY_BENEFICIARY, "DegenDealsERC721: cant deal, when arbitrage is open");
+        IDeDealsERC6551Account dealAccount = IDeDealsERC6551Account(payable(dealData.dealAccount));
+        if (msg.sender != dealData.obligor || msg.sender != ownerOf(dealId)) {
+            revert NotDealSubjectOnDeal(dealId, msg.sender);
+        }
+        try dealAccount.deal(data) returns (bool obligorDeal, bool beneficiaryDeal) {
+            if (!dealData.obligorDeal) {
+                dealData.obligorDeal = obligorDeal;
                 dealData.status = DealStatus.OBLIGOR_SIGNED;
             }
-            else if (msg.sender == dealData.obligee) {
-                dealData.obligeeDeal = true;
-                dealData.status = DealStatus.OBLIGEE_SIGNED;
+            if (!dealData.beneficiaryDeal) {
+                dealData.beneficiaryDeal = beneficiaryDeal;
+                dealData.status = DealStatus.BENEFICIARY_SIGNED;
             }
-            else {
-                revert NotDealSubjectOnDeal(dealId, msg.sender);
-            }
-
-            if (dealData.obligorDeal && dealData.obligeeDeal) {
+  
+            if (dealData.obligorDeal && dealData.beneficiaryDeal) {
                 dealData.status = DealStatus.DEAL;
                 emit Deal(dealId);
             }
@@ -464,45 +537,57 @@ contract DegenDealsERC721 is Initializable, AccessControl, ERC721, IDegenDealsER
 
     /// @notice if deal is out of agreement by one of the side of obligor or obligee
     /// @param dealId id of the deal
-    function arbitrage(uint256 dealId) public onlyRole(MEMBER_ROLE) {
+    function arbitrage(uint256 dealId, bytes memory data) public {
         DealData storage dealData = deals[dealId];
-        require(msg.sender == dealData.obligor || msg.sender == dealData.obligee, "DegenDealsERC721: not eligible");
-
-        if (msg.sender == dealData.obligor) {
-            dealData.status = DealStatus.ARBITRAGE_BY_OBLIGOR;
-        } else if (msg.sender == dealData.obligee) {
-            dealData.status = DealStatus.ARBITRAGE_BY_OBLIGEE;
+        require(msg.sender == dealData.obligor || msg.sender == ownerOf(dealId), "DegenDealsERC721: not eligible");
+        IDeDealsERC6551Account dealAccount = IDeDealsERC6551Account(payable(dealData.dealAccount));
+        try dealAccount.arbitrage(data) {
+            if (msg.sender == dealData.obligor) {
+                dealData.status = DealStatus.ARBITRAGE_BY_OBLIGOR;
+            } else if (msg.sender == dealData.obligee) {
+                dealData.status = DealStatus.ARBITRAGE_BY_BENEFICIARY;
+            }
+        } catch {
+            revert DealAccountArbitrageFailed();
         }
         emit Arbitrage(dealId, msg.sender);
     }
 
     /// @notice resolve the arbitrage by arbitrator
     /// @param dealId id of the deal
-    function resolve(uint256 dealId, uint8 decision) public onlyRole(ARBITRATOR_ROLE) {
+    function resolve(uint256 dealId, bytes memory data) public {
         DealData storage dealData = deals[dealId];
+        require(dealData.status == DealStatus.ARBITRAGE_BY_OBLIGOR || dealData.status == DealStatus.ARBITRAGE_BY_BENEFICIARY, "DegenDealsERC721: should be arbitrage status");
 
-        require(dealData.status == DealStatus.ARBITRAGE_BY_OBLIGOR || dealData.status == DealStatus.ARBITRAGE_BY_OBLIGEE, "DegenDealsERC721: should be arbitrage status");
-
-        if (decision == 1) {
-            // Resolve in favor of obligor
-        } else if (decision == 2) {
-            // Resolve in favor of obligee
+        IDeDealsERC6551Account dealAccount = IDeDealsERC6551Account(payable(dealData.dealAccount));
+        try dealAccount.resolve(data) {
+            dealData.arbitrator = msg.sender;
+            dealData.status = DealStatus.RESOLVED;
+        } catch {
+            revert DealAccountResolveFailed();
         }
-
-        dealData.arbitrator = msg.sender;
-        dealData.status = DealStatus.RESOLVED;
-    
+      
         emit Resolve(dealId);
     }
 
-    function _distributeFee(IERC20 token, uint256 fee) internal {
+    function _distributeFee(IERC20 paymentToken, uint256 fee, address affilate) internal {   
         uint256 legalFee = fee * legalFeeShare / totalFeeShare;
         uint256 platformFee = fee * platformFeeShare / totalFeeShare;
+        uint256 affilateFee = fee * affilateFeeShare / totalFeeShare;
         if (legalFee > 0) {
-            token.safeTransfer(legalWallet, legalFee);
+            paymentToken.safeTransfer(legalWallet, legalFee);
         }
         if (platformFee > 0) {
-            token.safeTransfer(platformWallet, platformFee);
+            paymentToken.safeTransfer(platformWallet, platformFee);
+        }
+        if (affilateFee > 0) {
+            if (affilate == address(0)) {
+                paymentToken.safeTransfer(platformWallet, affilateFee);
+            }
+            else {
+                paymentToken.forceApprove(address(dedealsAffilates), affilateFee);
+                dedealsAffilates.distributeAffilatesFees(paymentToken, affilate, affilateFee);
+            } 
         }
     }
 
@@ -512,6 +597,10 @@ contract DegenDealsERC721 is Initializable, AccessControl, ERC721, IDegenDealsER
         DealData storage dealData = deals[dealId];
         require(dealData.status == DealStatus.DEAL || dealData.status == DealStatus.RESOLVED, "DegenDealsERC721: only DEAL or RESOLVED");
         dealURI[dealId] = dealURI_;
+    }
+
+    function calcCreateFee(uint256 paymentAmount) public view returns (uint256) {
+        return paymentAmount * createFeePercent / PERCENT_DENOMINATOR;
     }
 
     /// @param paymentAmount of payment token
@@ -565,12 +654,6 @@ contract DegenDealsERC721 is Initializable, AccessControl, ERC721, IDegenDealsER
         }
     }
 
-    /// @notice returns true is wallet is member
-    /// @param wallet address of wallet
-    function isMember(address wallet) public view returns (bool) {
-        return hasRole(MEMBER_ROLE, wallet);
-    }
-
     /// @notice return deals data in pagination
     /// @param dealIdFrom id of the deal start
     /// @param dealIdTo id of the deal end
@@ -578,15 +661,17 @@ contract DegenDealsERC721 is Initializable, AccessControl, ERC721, IDegenDealsER
         require(dealIdFrom <= dealIdTo, "Invalid range");
         if (totalDeals == 0) {
             dealDatas = new DealData[](0);
-        } else {
-            uint256 len = dealIdTo - dealIdFrom + 1;
-            dealDatas = new DealData[](len);
+            return dealDatas;
         }
+        uint256 len = dealIdTo - dealIdFrom + 1;
+        dealDatas = new DealData[](len);
         if (dealIdTo >= totalDeals) {
             dealIdTo = totalDeals - 1;
         }
-        for (uint256 i = dealIdFrom; i <= dealIdTo; ++i) {
-            dealDatas[i - dealIdFrom] = deals[i];
+        uint256 dealId = dealIdFrom;
+        for (;dealId <= dealIdTo; ) {
+            dealDatas[dealId - dealIdFrom] = deals[dealId];
+            unchecked {++dealId;}
         }
     }
 

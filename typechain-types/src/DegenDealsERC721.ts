@@ -35,7 +35,7 @@ export declare namespace IDegenDealsERC721 {
     deadline: BigNumberish;
     obligee: AddressLike;
     obligorDeal: boolean;
-    obligeeDeal: boolean;
+    beneficiaryDeal: boolean;
     arbitrator: AddressLike;
     status: BigNumberish;
   };
@@ -51,7 +51,7 @@ export declare namespace IDegenDealsERC721 {
     deadline: bigint,
     obligee: string,
     obligorDeal: boolean,
-    obligeeDeal: boolean,
+    beneficiaryDeal: boolean,
     arbitrator: string,
     status: bigint
   ] & {
@@ -65,7 +65,7 @@ export declare namespace IDegenDealsERC721 {
     deadline: bigint;
     obligee: string;
     obligorDeal: boolean;
-    obligeeDeal: boolean;
+    beneficiaryDeal: boolean;
     arbitrator: string;
     status: bigint;
   };
@@ -77,25 +77,31 @@ export interface DegenDealsERC721Interface extends Interface {
       | "ARBITRATOR_ROLE"
       | "DEFAULT_ADMIN_ROLE"
       | "DEGEN_BOSS_ROLE"
-      | "MEMBER_ROLE"
       | "PERCENT_DENOMINATOR"
+      | "_chargeAndDistributeCreateFee"
       | "_chargeAndDistributeMintFee"
       | "adjustShares"
+      | "affilateFeeShare"
       | "approve"
       | "arbitrage"
       | "balanceOf"
-      | "becomeMember"
+      | "calcCreateFee"
       | "calcFundAmount"
       | "calcMintFee"
       | "calcPayAmount"
       | "calcSplitFee"
+      | "confirm"
+      | "create"
+      | "createFeePercent"
       | "deal"
       | "dealDiscountPercent"
       | "dealURI"
       | "deals"
       | "dedeal"
       | "dedealRate"
+      | "dedealsAffilates"
       | "dedealsERC6551Registry"
+      | "dedealsSBT"
       | "defaultURI"
       | "designate"
       | "fund"
@@ -105,15 +111,12 @@ export interface DegenDealsERC721Interface extends Interface {
       | "getDeals"
       | "getRoleAdmin"
       | "getRootDealId"
-      | "grantMember"
       | "grantRole"
       | "hasRole"
       | "isApprovedForAll"
-      | "isMember"
       | "isPaymentToken"
-      | "kycWallet"
       | "legalFeeShare"
-      | "legalWallet"
+      | "legalProviderWallet"
       | "mint"
       | "mintFeePercent"
       | "modifyPaymentToken"
@@ -126,7 +129,6 @@ export interface DegenDealsERC721Interface extends Interface {
       | "payFeePercent"
       | "platformFeeShare"
       | "platformWallet"
-      | "quitFromMember"
       | "renounceRole"
       | "resolve"
       | "revokeRole"
@@ -137,7 +139,6 @@ export interface DegenDealsERC721Interface extends Interface {
       | "setApprovalForAll"
       | "setDealURI"
       | "setDefaultURI"
-      | "setKYCWallet"
       | "setLegalWallet"
       | "setPlatformWallet"
       | "split"
@@ -189,12 +190,12 @@ export interface DegenDealsERC721Interface extends Interface {
     values?: undefined
   ): string;
   encodeFunctionData(
-    functionFragment: "MEMBER_ROLE",
+    functionFragment: "PERCENT_DENOMINATOR",
     values?: undefined
   ): string;
   encodeFunctionData(
-    functionFragment: "PERCENT_DENOMINATOR",
-    values?: undefined
+    functionFragment: "_chargeAndDistributeCreateFee",
+    values: [AddressLike, BigNumberish]
   ): string;
   encodeFunctionData(
     functionFragment: "_chargeAndDistributeMintFee",
@@ -205,20 +206,24 @@ export interface DegenDealsERC721Interface extends Interface {
     values: [BigNumberish, BigNumberish]
   ): string;
   encodeFunctionData(
+    functionFragment: "affilateFeeShare",
+    values?: undefined
+  ): string;
+  encodeFunctionData(
     functionFragment: "approve",
     values: [AddressLike, BigNumberish]
   ): string;
   encodeFunctionData(
     functionFragment: "arbitrage",
-    values: [BigNumberish]
+    values: [BigNumberish, BytesLike]
   ): string;
   encodeFunctionData(
     functionFragment: "balanceOf",
     values: [AddressLike]
   ): string;
   encodeFunctionData(
-    functionFragment: "becomeMember",
-    values: [BytesLike]
+    functionFragment: "calcCreateFee",
+    values: [BigNumberish]
   ): string;
   encodeFunctionData(
     functionFragment: "calcFundAmount",
@@ -235,6 +240,25 @@ export interface DegenDealsERC721Interface extends Interface {
   encodeFunctionData(
     functionFragment: "calcSplitFee",
     values: [BigNumberish]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "confirm",
+    values: [BigNumberish]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "create",
+    values: [
+      string,
+      AddressLike,
+      BigNumberish,
+      BigNumberish,
+      AddressLike,
+      AddressLike
+    ]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "createFeePercent",
+    values?: undefined
   ): string;
   encodeFunctionData(
     functionFragment: "deal",
@@ -255,7 +279,15 @@ export interface DegenDealsERC721Interface extends Interface {
     values?: undefined
   ): string;
   encodeFunctionData(
+    functionFragment: "dedealsAffilates",
+    values?: undefined
+  ): string;
+  encodeFunctionData(
     functionFragment: "dedealsERC6551Registry",
+    values?: undefined
+  ): string;
+  encodeFunctionData(
+    functionFragment: "dedealsSBT",
     values?: undefined
   ): string;
   encodeFunctionData(
@@ -295,10 +327,6 @@ export interface DegenDealsERC721Interface extends Interface {
     values: [BigNumberish]
   ): string;
   encodeFunctionData(
-    functionFragment: "grantMember",
-    values: [AddressLike, BytesLike]
-  ): string;
-  encodeFunctionData(
     functionFragment: "grantRole",
     values: [BytesLike, AddressLike]
   ): string;
@@ -311,20 +339,15 @@ export interface DegenDealsERC721Interface extends Interface {
     values: [AddressLike, AddressLike]
   ): string;
   encodeFunctionData(
-    functionFragment: "isMember",
-    values: [AddressLike]
-  ): string;
-  encodeFunctionData(
     functionFragment: "isPaymentToken",
     values: [AddressLike]
   ): string;
-  encodeFunctionData(functionFragment: "kycWallet", values?: undefined): string;
   encodeFunctionData(
     functionFragment: "legalFeeShare",
     values?: undefined
   ): string;
   encodeFunctionData(
-    functionFragment: "legalWallet",
+    functionFragment: "legalProviderWallet",
     values?: undefined
   ): string;
   encodeFunctionData(
@@ -365,7 +388,7 @@ export interface DegenDealsERC721Interface extends Interface {
   ): string;
   encodeFunctionData(
     functionFragment: "pay",
-    values: [BigNumberish, BytesLike]
+    values: [BigNumberish, AddressLike, BytesLike]
   ): string;
   encodeFunctionData(
     functionFragment: "payFeePercent",
@@ -380,16 +403,12 @@ export interface DegenDealsERC721Interface extends Interface {
     values?: undefined
   ): string;
   encodeFunctionData(
-    functionFragment: "quitFromMember",
-    values?: undefined
-  ): string;
-  encodeFunctionData(
     functionFragment: "renounceRole",
     values: [BytesLike, AddressLike]
   ): string;
   encodeFunctionData(
     functionFragment: "resolve",
-    values: [BigNumberish, BigNumberish]
+    values: [BigNumberish, BytesLike]
   ): string;
   encodeFunctionData(
     functionFragment: "revokeRole",
@@ -424,10 +443,6 @@ export interface DegenDealsERC721Interface extends Interface {
     values: [string]
   ): string;
   encodeFunctionData(
-    functionFragment: "setKYCWallet",
-    values: [AddressLike]
-  ): string;
-  encodeFunctionData(
     functionFragment: "setLegalWallet",
     values: [AddressLike]
   ): string;
@@ -437,7 +452,7 @@ export interface DegenDealsERC721Interface extends Interface {
   ): string;
   encodeFunctionData(
     functionFragment: "split",
-    values: [BigNumberish, BigNumberish[]]
+    values: [BigNumberish, BigNumberish[], BigNumberish[]]
   ): string;
   encodeFunctionData(
     functionFragment: "splitFeePercent",
@@ -490,11 +505,11 @@ export interface DegenDealsERC721Interface extends Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(
-    functionFragment: "MEMBER_ROLE",
+    functionFragment: "PERCENT_DENOMINATOR",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
-    functionFragment: "PERCENT_DENOMINATOR",
+    functionFragment: "_chargeAndDistributeCreateFee",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -505,11 +520,15 @@ export interface DegenDealsERC721Interface extends Interface {
     functionFragment: "adjustShares",
     data: BytesLike
   ): Result;
+  decodeFunctionResult(
+    functionFragment: "affilateFeeShare",
+    data: BytesLike
+  ): Result;
   decodeFunctionResult(functionFragment: "approve", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "arbitrage", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "balanceOf", data: BytesLike): Result;
   decodeFunctionResult(
-    functionFragment: "becomeMember",
+    functionFragment: "calcCreateFee",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -528,6 +547,12 @@ export interface DegenDealsERC721Interface extends Interface {
     functionFragment: "calcSplitFee",
     data: BytesLike
   ): Result;
+  decodeFunctionResult(functionFragment: "confirm", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "create", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "createFeePercent",
+    data: BytesLike
+  ): Result;
   decodeFunctionResult(functionFragment: "deal", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "dealDiscountPercent",
@@ -538,9 +563,14 @@ export interface DegenDealsERC721Interface extends Interface {
   decodeFunctionResult(functionFragment: "dedeal", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "dedealRate", data: BytesLike): Result;
   decodeFunctionResult(
+    functionFragment: "dedealsAffilates",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
     functionFragment: "dedealsERC6551Registry",
     data: BytesLike
   ): Result;
+  decodeFunctionResult(functionFragment: "dedealsSBT", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "defaultURI", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "designate", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "fund", data: BytesLike): Result;
@@ -562,28 +592,22 @@ export interface DegenDealsERC721Interface extends Interface {
     functionFragment: "getRootDealId",
     data: BytesLike
   ): Result;
-  decodeFunctionResult(
-    functionFragment: "grantMember",
-    data: BytesLike
-  ): Result;
   decodeFunctionResult(functionFragment: "grantRole", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "hasRole", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "isApprovedForAll",
     data: BytesLike
   ): Result;
-  decodeFunctionResult(functionFragment: "isMember", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "isPaymentToken",
     data: BytesLike
   ): Result;
-  decodeFunctionResult(functionFragment: "kycWallet", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "legalFeeShare",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
-    functionFragment: "legalWallet",
+    functionFragment: "legalProviderWallet",
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "mint", data: BytesLike): Result;
@@ -623,10 +647,6 @@ export interface DegenDealsERC721Interface extends Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(
-    functionFragment: "quitFromMember",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
     functionFragment: "renounceRole",
     data: BytesLike
   ): Result;
@@ -655,10 +675,6 @@ export interface DegenDealsERC721Interface extends Interface {
   decodeFunctionResult(functionFragment: "setDealURI", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "setDefaultURI",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
-    functionFragment: "setKYCWallet",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -879,19 +895,22 @@ export namespace PayEvent {
     dealId: BigNumberish,
     obligee: AddressLike,
     token: AddressLike,
-    paymentAmount: BigNumberish
+    paymentAmount: BigNumberish,
+    receiver: AddressLike
   ];
   export type OutputTuple = [
     dealId: bigint,
     obligee: string,
     token: string,
-    paymentAmount: bigint
+    paymentAmount: bigint,
+    receiver: string
   ];
   export interface OutputObject {
     dealId: bigint;
     obligee: string;
     token: string;
     paymentAmount: bigint;
+    receiver: string;
   }
   export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
   export type Filter = TypedDeferredTopicFilter<Event>;
@@ -1092,9 +1111,13 @@ export interface DegenDealsERC721 extends BaseContract {
 
   DEGEN_BOSS_ROLE: TypedContractMethod<[], [string], "view">;
 
-  MEMBER_ROLE: TypedContractMethod<[], [string], "view">;
-
   PERCENT_DENOMINATOR: TypedContractMethod<[], [bigint], "view">;
+
+  _chargeAndDistributeCreateFee: TypedContractMethod<
+    [paymentToken: AddressLike, paymentAmount: BigNumberish],
+    [void],
+    "nonpayable"
+  >;
 
   _chargeAndDistributeMintFee: TypedContractMethod<
     [paymentToken: AddressLike, paymentAmount: BigNumberish],
@@ -1103,10 +1126,12 @@ export interface DegenDealsERC721 extends BaseContract {
   >;
 
   adjustShares: TypedContractMethod<
-    [_legalFeeShare: BigNumberish, _platformFeeShare: BigNumberish],
+    [_platformFeeShare: BigNumberish, _legalFeeShare: BigNumberish],
     [void],
     "nonpayable"
   >;
+
+  affilateFeeShare: TypedContractMethod<[], [bigint], "view">;
 
   approve: TypedContractMethod<
     [to: AddressLike, tokenId: BigNumberish],
@@ -1114,14 +1139,18 @@ export interface DegenDealsERC721 extends BaseContract {
     "nonpayable"
   >;
 
-  arbitrage: TypedContractMethod<[dealId: BigNumberish], [void], "nonpayable">;
+  arbitrage: TypedContractMethod<
+    [dealId: BigNumberish, data: BytesLike],
+    [void],
+    "nonpayable"
+  >;
 
   balanceOf: TypedContractMethod<[owner: AddressLike], [bigint], "view">;
 
-  becomeMember: TypedContractMethod<
-    [signature: BytesLike],
-    [void],
-    "nonpayable"
+  calcCreateFee: TypedContractMethod<
+    [paymentAmount: BigNumberish],
+    [bigint],
+    "view"
   >;
 
   calcFundAmount: TypedContractMethod<
@@ -1166,6 +1195,23 @@ export interface DegenDealsERC721 extends BaseContract {
     "view"
   >;
 
+  confirm: TypedContractMethod<[dealId: BigNumberish], [void], "nonpayable">;
+
+  create: TypedContractMethod<
+    [
+      offerHash: string,
+      paymentToken: AddressLike,
+      paymentAmount: BigNumberish,
+      period: BigNumberish,
+      obligor: AddressLike,
+      erc6551Account: AddressLike
+    ],
+    [[bigint, string] & { dealId: bigint; dealAccount: string }],
+    "nonpayable"
+  >;
+
+  createFeePercent: TypedContractMethod<[], [bigint], "view">;
+
   deal: TypedContractMethod<
     [dealId: BigNumberish, data: BytesLike],
     [void],
@@ -1208,7 +1254,7 @@ export interface DegenDealsERC721 extends BaseContract {
         deadline: bigint;
         obligee: string;
         obligorDeal: boolean;
-        obligeeDeal: boolean;
+        beneficiaryDeal: boolean;
         arbitrator: string;
         status: bigint;
       }
@@ -1220,7 +1266,11 @@ export interface DegenDealsERC721 extends BaseContract {
 
   dedealRate: TypedContractMethod<[], [bigint], "view">;
 
+  dedealsAffilates: TypedContractMethod<[], [string], "view">;
+
   dedealsERC6551Registry: TypedContractMethod<[], [string], "view">;
+
+  dedealsSBT: TypedContractMethod<[], [string], "view">;
 
   defaultURI: TypedContractMethod<[], [string], "view">;
 
@@ -1256,12 +1306,6 @@ export interface DegenDealsERC721 extends BaseContract {
 
   getRootDealId: TypedContractMethod<[dealId: BigNumberish], [bigint], "view">;
 
-  grantMember: TypedContractMethod<
-    [member: AddressLike, signature: BytesLike],
-    [void],
-    "nonpayable"
-  >;
-
   grantRole: TypedContractMethod<
     [role: BytesLike, account: AddressLike],
     [void],
@@ -1280,15 +1324,11 @@ export interface DegenDealsERC721 extends BaseContract {
     "view"
   >;
 
-  isMember: TypedContractMethod<[wallet: AddressLike], [boolean], "view">;
-
   isPaymentToken: TypedContractMethod<[arg0: AddressLike], [boolean], "view">;
-
-  kycWallet: TypedContractMethod<[], [string], "view">;
 
   legalFeeShare: TypedContractMethod<[], [bigint], "view">;
 
-  legalWallet: TypedContractMethod<[], [string], "view">;
+  legalProviderWallet: TypedContractMethod<[], [string], "view">;
 
   mint: TypedContractMethod<
     [
@@ -1330,7 +1370,7 @@ export interface DegenDealsERC721 extends BaseContract {
   parentDealId: TypedContractMethod<[arg0: BigNumberish], [bigint], "view">;
 
   pay: TypedContractMethod<
-    [dealId: BigNumberish, data: BytesLike],
+    [dealId: BigNumberish, beneficiary: AddressLike, data: BytesLike],
     [void],
     "nonpayable"
   >;
@@ -1341,8 +1381,6 @@ export interface DegenDealsERC721 extends BaseContract {
 
   platformWallet: TypedContractMethod<[], [string], "view">;
 
-  quitFromMember: TypedContractMethod<[], [void], "nonpayable">;
-
   renounceRole: TypedContractMethod<
     [role: BytesLike, callerConfirmation: AddressLike],
     [void],
@@ -1350,7 +1388,7 @@ export interface DegenDealsERC721 extends BaseContract {
   >;
 
   resolve: TypedContractMethod<
-    [dealId: BigNumberish, decision: BigNumberish],
+    [dealId: BigNumberish, data: BytesLike],
     [void],
     "nonpayable"
   >;
@@ -1404,14 +1442,8 @@ export interface DegenDealsERC721 extends BaseContract {
     "nonpayable"
   >;
 
-  setKYCWallet: TypedContractMethod<
-    [kycWallet_: AddressLike],
-    [void],
-    "nonpayable"
-  >;
-
   setLegalWallet: TypedContractMethod<
-    [legalWallet_: AddressLike],
+    [legalProviderWallet_: AddressLike],
     [void],
     "nonpayable"
   >;
@@ -1423,7 +1455,11 @@ export interface DegenDealsERC721 extends BaseContract {
   >;
 
   split: TypedContractMethod<
-    [dealId: BigNumberish, paymentAmounts: BigNumberish[]],
+    [
+      dealId: BigNumberish,
+      paymentAmounts: BigNumberish[],
+      periodShifts: BigNumberish[]
+    ],
     [[bigint, bigint] & { splitDealIdFrom: bigint; splitDealIdTo: bigint }],
     "nonpayable"
   >;
@@ -1478,11 +1514,15 @@ export interface DegenDealsERC721 extends BaseContract {
     nameOrSignature: "DEGEN_BOSS_ROLE"
   ): TypedContractMethod<[], [string], "view">;
   getFunction(
-    nameOrSignature: "MEMBER_ROLE"
-  ): TypedContractMethod<[], [string], "view">;
-  getFunction(
     nameOrSignature: "PERCENT_DENOMINATOR"
   ): TypedContractMethod<[], [bigint], "view">;
+  getFunction(
+    nameOrSignature: "_chargeAndDistributeCreateFee"
+  ): TypedContractMethod<
+    [paymentToken: AddressLike, paymentAmount: BigNumberish],
+    [void],
+    "nonpayable"
+  >;
   getFunction(
     nameOrSignature: "_chargeAndDistributeMintFee"
   ): TypedContractMethod<
@@ -1493,10 +1533,13 @@ export interface DegenDealsERC721 extends BaseContract {
   getFunction(
     nameOrSignature: "adjustShares"
   ): TypedContractMethod<
-    [_legalFeeShare: BigNumberish, _platformFeeShare: BigNumberish],
+    [_platformFeeShare: BigNumberish, _legalFeeShare: BigNumberish],
     [void],
     "nonpayable"
   >;
+  getFunction(
+    nameOrSignature: "affilateFeeShare"
+  ): TypedContractMethod<[], [bigint], "view">;
   getFunction(
     nameOrSignature: "approve"
   ): TypedContractMethod<
@@ -1506,13 +1549,17 @@ export interface DegenDealsERC721 extends BaseContract {
   >;
   getFunction(
     nameOrSignature: "arbitrage"
-  ): TypedContractMethod<[dealId: BigNumberish], [void], "nonpayable">;
+  ): TypedContractMethod<
+    [dealId: BigNumberish, data: BytesLike],
+    [void],
+    "nonpayable"
+  >;
   getFunction(
     nameOrSignature: "balanceOf"
   ): TypedContractMethod<[owner: AddressLike], [bigint], "view">;
   getFunction(
-    nameOrSignature: "becomeMember"
-  ): TypedContractMethod<[signature: BytesLike], [void], "nonpayable">;
+    nameOrSignature: "calcCreateFee"
+  ): TypedContractMethod<[paymentAmount: BigNumberish], [bigint], "view">;
   getFunction(
     nameOrSignature: "calcFundAmount"
   ): TypedContractMethod<
@@ -1556,6 +1603,26 @@ export interface DegenDealsERC721 extends BaseContract {
     "view"
   >;
   getFunction(
+    nameOrSignature: "confirm"
+  ): TypedContractMethod<[dealId: BigNumberish], [void], "nonpayable">;
+  getFunction(
+    nameOrSignature: "create"
+  ): TypedContractMethod<
+    [
+      offerHash: string,
+      paymentToken: AddressLike,
+      paymentAmount: BigNumberish,
+      period: BigNumberish,
+      obligor: AddressLike,
+      erc6551Account: AddressLike
+    ],
+    [[bigint, string] & { dealId: bigint; dealAccount: string }],
+    "nonpayable"
+  >;
+  getFunction(
+    nameOrSignature: "createFeePercent"
+  ): TypedContractMethod<[], [bigint], "view">;
+  getFunction(
     nameOrSignature: "deal"
   ): TypedContractMethod<
     [dealId: BigNumberish, data: BytesLike],
@@ -1598,7 +1665,7 @@ export interface DegenDealsERC721 extends BaseContract {
         deadline: bigint;
         obligee: string;
         obligorDeal: boolean;
-        obligeeDeal: boolean;
+        beneficiaryDeal: boolean;
         arbitrator: string;
         status: bigint;
       }
@@ -1612,7 +1679,13 @@ export interface DegenDealsERC721 extends BaseContract {
     nameOrSignature: "dedealRate"
   ): TypedContractMethod<[], [bigint], "view">;
   getFunction(
+    nameOrSignature: "dedealsAffilates"
+  ): TypedContractMethod<[], [string], "view">;
+  getFunction(
     nameOrSignature: "dedealsERC6551Registry"
+  ): TypedContractMethod<[], [string], "view">;
+  getFunction(
+    nameOrSignature: "dedealsSBT"
   ): TypedContractMethod<[], [string], "view">;
   getFunction(
     nameOrSignature: "defaultURI"
@@ -1658,13 +1731,6 @@ export interface DegenDealsERC721 extends BaseContract {
     nameOrSignature: "getRootDealId"
   ): TypedContractMethod<[dealId: BigNumberish], [bigint], "view">;
   getFunction(
-    nameOrSignature: "grantMember"
-  ): TypedContractMethod<
-    [member: AddressLike, signature: BytesLike],
-    [void],
-    "nonpayable"
-  >;
-  getFunction(
     nameOrSignature: "grantRole"
   ): TypedContractMethod<
     [role: BytesLike, account: AddressLike],
@@ -1686,19 +1752,13 @@ export interface DegenDealsERC721 extends BaseContract {
     "view"
   >;
   getFunction(
-    nameOrSignature: "isMember"
-  ): TypedContractMethod<[wallet: AddressLike], [boolean], "view">;
-  getFunction(
     nameOrSignature: "isPaymentToken"
   ): TypedContractMethod<[arg0: AddressLike], [boolean], "view">;
-  getFunction(
-    nameOrSignature: "kycWallet"
-  ): TypedContractMethod<[], [string], "view">;
   getFunction(
     nameOrSignature: "legalFeeShare"
   ): TypedContractMethod<[], [bigint], "view">;
   getFunction(
-    nameOrSignature: "legalWallet"
+    nameOrSignature: "legalProviderWallet"
   ): TypedContractMethod<[], [string], "view">;
   getFunction(
     nameOrSignature: "mint"
@@ -1750,7 +1810,7 @@ export interface DegenDealsERC721 extends BaseContract {
   getFunction(
     nameOrSignature: "pay"
   ): TypedContractMethod<
-    [dealId: BigNumberish, data: BytesLike],
+    [dealId: BigNumberish, beneficiary: AddressLike, data: BytesLike],
     [void],
     "nonpayable"
   >;
@@ -1764,9 +1824,6 @@ export interface DegenDealsERC721 extends BaseContract {
     nameOrSignature: "platformWallet"
   ): TypedContractMethod<[], [string], "view">;
   getFunction(
-    nameOrSignature: "quitFromMember"
-  ): TypedContractMethod<[], [void], "nonpayable">;
-  getFunction(
     nameOrSignature: "renounceRole"
   ): TypedContractMethod<
     [role: BytesLike, callerConfirmation: AddressLike],
@@ -1776,7 +1833,7 @@ export interface DegenDealsERC721 extends BaseContract {
   getFunction(
     nameOrSignature: "resolve"
   ): TypedContractMethod<
-    [dealId: BigNumberish, decision: BigNumberish],
+    [dealId: BigNumberish, data: BytesLike],
     [void],
     "nonpayable"
   >;
@@ -1834,18 +1891,23 @@ export interface DegenDealsERC721 extends BaseContract {
     nameOrSignature: "setDefaultURI"
   ): TypedContractMethod<[_defaultURI: string], [void], "nonpayable">;
   getFunction(
-    nameOrSignature: "setKYCWallet"
-  ): TypedContractMethod<[kycWallet_: AddressLike], [void], "nonpayable">;
-  getFunction(
     nameOrSignature: "setLegalWallet"
-  ): TypedContractMethod<[legalWallet_: AddressLike], [void], "nonpayable">;
+  ): TypedContractMethod<
+    [legalProviderWallet_: AddressLike],
+    [void],
+    "nonpayable"
+  >;
   getFunction(
     nameOrSignature: "setPlatformWallet"
   ): TypedContractMethod<[platformWallet_: AddressLike], [void], "nonpayable">;
   getFunction(
     nameOrSignature: "split"
   ): TypedContractMethod<
-    [dealId: BigNumberish, paymentAmounts: BigNumberish[]],
+    [
+      dealId: BigNumberish,
+      paymentAmounts: BigNumberish[],
+      periodShifts: BigNumberish[]
+    ],
     [[bigint, bigint] & { splitDealIdFrom: bigint; splitDealIdTo: bigint }],
     "nonpayable"
   >;
@@ -2137,7 +2199,7 @@ export interface DegenDealsERC721 extends BaseContract {
       MintEvent.OutputObject
     >;
 
-    "Pay(uint256,address,address,uint256)": TypedContractEvent<
+    "Pay(uint256,address,address,uint256,address)": TypedContractEvent<
       PayEvent.InputTuple,
       PayEvent.OutputTuple,
       PayEvent.OutputObject
