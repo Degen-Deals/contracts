@@ -8,7 +8,31 @@ import "@openzeppelin/contracts/interfaces/IERC4906.sol";
 
 interface IDeDealsERC721 is IERC721, IERC2981, IERC4906 {
 
+    error OnlyDeDealsBoss(address dedealsBoss, address sender);
+
+    error OnlyObligorWithSoul();
+    
+    error OnlyRecipientWithSoul();
+
+    error OnlyObligeeWithSoul();
+
+    error OnlyBeneficiaryWithSoul();
+
+    error OnlyRecipient(uint256 dealId, address recipient, address sender);
+
     error OnlyCreatedStatus(uint256 dealId);
+
+    error OnlyMintedStatus(uint256 dealId);
+
+    error OnlyPaidStatus(uint256 dealId);
+
+    error OnlyArbitrageStatus(uint256 dealId);
+
+    error NoDiscount();
+
+    error BeneficiaryMustDealOrArbitrage(uint256 dealId);
+
+    error OnlyDealOrResolved(uint256 dealId);
 
     error NotPaymentToken(address paymentToken);
 
@@ -16,18 +40,22 @@ interface IDeDealsERC721 is IERC721, IERC2981, IERC4906 {
 
     error InvalidPeriodShift(uint256 iteration, uint256 period, int256 periodShift);
 
+    error InvalidPercent(uint256 dealId, uint256 dealDiscountPercent_);
+
     error NotObligorOfDeal(uint256 dealId, address obligor, address sender);
 
     error NotObligeeOfDeal(uint256 dealId, address obligee, address sender);
+    
+    error NotTransferSubject(uint256 dealId, address obligor, address newObligor, address sender);
 
-    error NotDealSubjectOnTransfer(uint256 dealId, address sender);
+    error FailTransferObligor(uint256 dealId, address obligor, address newObligor, address sender);
+
+    error FailTransferObligee(uint256 dealId, address obligee, address newObligee, address sender);
+
+    error NotDealSubject(uint256 dealId, address sender);
 
     error NotObligeeReceiver(uint256 dealId);
 
-    error NotDealSubjectOnPay(uint256 dealId, address sender);
-
-    error NotDealSubjectOnDeal(uint256 dealId, address sender);
-    
     error DealAccountTransferObligorFailed(uint256 dealId, address account);
 
     error DealAccountTransferObligeeFailed(uint256 dealId, address account);
@@ -41,14 +69,16 @@ interface IDeDealsERC721 is IERC721, IERC2981, IERC4906 {
     error DealAccountArbitrageFailed();
 
     error DealAccountResolveFailed();
+    
+    // EVENTS
 
     event Mint(uint256 dealId, address obligor, address obligee, address dealAccount, string offerHash, address paymentToken, uint256 paymentAmount, uint256 period);
 
     event Split(uint256 dealId);
 
-    event Designate(uint256 dealId, uint256 dealDiscountPercent);
+    event Discount(uint256 dealId, uint256 dealDiscountPercent);
 
-    event Fund(uint256 dealId, address newObligor);
+    event Bargain(uint256 dealId, address newObligor);
 
     event TransferObligor(uint256 dealId, address prevObligor, address newObligor);
 
@@ -75,31 +105,19 @@ interface IDeDealsERC721 is IERC721, IERC2981, IERC4906 {
     }
 
     struct DealData {
-        // the creator of deal
-        address minter;
-        // the obligor of the deal (who have the obligation to execute deal)
-        address obligor;
-        // the description of object of deal
-        string offerHash;
-        // the address of payment token
-        IERC20 paymentToken;
-        // the amount of payment token
-        uint256 paymentAmount;
-        // the time period in seconds
-        uint256 period;
-        // the address of associated smart-contract account
-        address dealAccount;
-        // the deadline of deal
-        uint256 deadline;
-        // the obligee of deal (who have obligation for making a payment)
-        address obligee;
-        // is obligor executed his part of deal 
-        bool obligorDeal;
-        // is beneficiary satisfied of deal
-        bool beneficiaryDeal;
-        // if disputes arised, than who is arbitor
-        address arbitrator;
-        DealStatus status;  // status of deal
+        address issuer;         // the issuer of a deal. Can be obligor or obligee
+        address obligor;        // the obligor of the deal (who have the obligation to execute deal)
+        address recipient;      // the recipient of payment 
+        address obligee;        // the obligee of deal (who have obligation for making a payment)
+        address beneficiary;    // the beneficiary of offer after payment
+        address arbitrator;     // if disputes arised, than who is arbitor
+        address dealAccount;    // the address of associated smart-contract account
+        string offerHash;       // the description of object of deal
+        IERC20 paymentToken;    // the address of payment token
+        uint256 paymentAmount;  // the amount of payment token
+        uint256 period;         // the time period in seconds
+        uint256 deadline;       // the deadline of deal
+        DealStatus status;      // status of deal
     }
 
     /// @notice obligee creates the deal and the obligor should to accept it
@@ -112,10 +130,12 @@ interface IDeDealsERC721 is IERC721, IERC2981, IERC4906 {
         address erc6551Account
     ) external returns (uint256 dealId, address dealAccount);
 
+    function mint(uint256 dealId) external;
+
     function mint(
         string memory offerHash,
         address paymentToken,
-        uint256 principalAmount,
+        uint256 paymentAmount,
         uint256 period,
         address obligee, 
         address erc6551Account
@@ -123,9 +143,9 @@ interface IDeDealsERC721 is IERC721, IERC2981, IERC4906 {
 
     function split(uint256 dealId, uint256[] memory principalAmounts, int256[] memory periodShifts) external returns (uint256 splitDealIdFrom, uint256 splitDealIdTo);
 
-    function designate(uint256 dealId, uint256 dealDiscountPercent_) external;
+    function discount(uint256 dealId, uint256 dealDiscountPercent_) external;
 
-    function fund(uint256 dealId, bytes memory data) external;
+    function bargain(uint256 dealId, bytes memory data) external;
 
     function pay(uint256 dealId, address beneficiary, bytes memory data) external;
 
@@ -133,6 +153,14 @@ interface IDeDealsERC721 is IERC721, IERC2981, IERC4906 {
 
     function getDeals(uint256 dealIdFrom, uint256 dealIdTo) external view returns (DealData[] memory dealDatas);
 
-    function calcFundAmount(uint256 dealId) external view returns (uint256 totalAmount, uint256 amountWithDiscount, uint256 fundFee);
+    function calcCreateFee(uint256 paymentAmount) external view returns (uint256);
+
+    function calcMintFee(uint256 paymentAmount) external view returns (uint256);
+
+    function calcSplitFee(uint256 dealId) external view returns (uint256 totalAmount, uint256 paymentAmount, uint256 splitFee);
+
+    function calcBargainAmount(uint256 dealId) external view returns (uint256 totalAmount, uint256 amountWithDiscount, uint256 fundFee);
+
+    function calcPayAmount(uint256 dealId) external view returns (uint256 totalAmount, uint256 payAmount, uint256 payFee);
 
 }

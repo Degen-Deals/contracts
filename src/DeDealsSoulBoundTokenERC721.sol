@@ -4,6 +4,7 @@ pragma solidity ^0.8.24;
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
+import "./interfaces/IDeDealsBoss.sol";
 import "./interfaces/IDeDealsERC721.sol";
 import "./interfaces/IDeDealsSoulBoundTokenERC721.sol";
 
@@ -14,6 +15,8 @@ import "./interfaces/IDeDealsSoulBoundTokenERC721.sol";
  */
 contract DeDealsSoulBoundTokenERC721 is ERC721, EIP712, IDeDealsSoulBoundTokenERC721 {
     using ECDSA for bytes;
+
+    IDeDealsBoss public deDealsBoss;
 
     IDeDealsERC721 public deDeals;
 
@@ -29,12 +32,14 @@ contract DeDealsSoulBoundTokenERC721 is ERC721, EIP712, IDeDealsSoulBoundTokenER
     mapping(uint256 sbtId => SBTData) public sbtDatas;
 
     constructor (
+        address deDealsBoss_,
         address deDeals_,
         address KYCWallet_
-    ) 
-        ERC721("SoulBoundToken on DegenDeals", "DeDEALS-SBT") 
+    )
+        ERC721("DeDeals SoulBoundToken", "DeDEALS-SBT") 
         EIP712("DeDEALS-SBT", "0") 
     {
+        deDealsBoss = IDeDealsBoss(deDealsBoss_);
         deDeals = IDeDealsERC721(deDeals_);
         require(KYCWallet_ != address(0), "invalid KYC wallet");
         KYCWallet = KYCWallet_;
@@ -42,6 +47,11 @@ contract DeDealsSoulBoundTokenERC721 is ERC721, EIP712, IDeDealsSoulBoundTokenER
         totalSBT = 0;
         _mint(KYCWallet, totalSBT);
         ++totalSBT;
+    }
+
+    function setKYCWallet(address KYCWallet_) public {
+        if (address(deDealsBoss) != msg.sender) { revert OnlyDeDealsBoss(msg.sender); }
+        KYCWallet = KYCWallet_;
     }
 
     /// @notice mints new SBT token
@@ -75,6 +85,7 @@ contract DeDealsSoulBoundTokenERC721 is ERC721, EIP712, IDeDealsSoulBoundTokenER
         return balanceOf(account) > 0;
     }
 
+    /// @notice check that signature is signed by KYCWallet
     function verify(address account, bytes memory signature) public view returns (bool) {
         bytes32 digest = _hashTypedDataV4(
             keccak256(
@@ -99,16 +110,19 @@ contract DeDealsSoulBoundTokenERC721 is ERC721, EIP712, IDeDealsSoulBoundTokenER
         );
     }
 
+    /// @notice returns chain id of blockchain
     function chainId() public view returns (uint256) {
         return block.chainid;
     }
 
+    /// @notice return the name of soul bound token collection
     function name() public pure override returns (string memory) {
-        return "SoulBoundToken on DegenDeals";
+        return "SoulBoundToken on DeDeals";
     }
 
+    /// @notice return the symbol of soul bound token collection
     function symbol() public pure override returns (string memory) {
-        return "DeDEALS-SBT";
+        return "SBT-DeDEALS";
     }
 
 }

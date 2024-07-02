@@ -7,6 +7,7 @@ import type * as erc6551 from "./ERC6551";
 export type { erc6551 };
 export type { IDeDealERC20 } from "./IDeDealERC20";
 export type { IDeDealsAffilatesERC721 } from "./IDeDealsAffilatesERC721";
+export type { IDeDealsBoss } from "./IDeDealsBoss";
 export type { IDeDealsERC6551Account } from "./IDeDealsERC6551Account";
 export type { IDeDealsERC6551Registry } from "./IDeDealsERC6551Registry";
 export type { IDeDealsERC721 } from "./IDeDealsERC721";

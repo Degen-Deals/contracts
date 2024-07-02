@@ -31,7 +31,7 @@ contract DegenDealsERC6551Account is
     IDeDealsERC6551Registry public erc6551Registry;
 
     /// @dev address of DegenDeals collection
-    IDeDealsERC721 public degenDeals;
+    IDeDealsERC721 public deDeals;
 
     /// @dev which dealId is associated with this account
     uint256 public dealId;
@@ -43,7 +43,7 @@ contract DegenDealsERC6551Account is
     ) public virtual initializer() {
         __ERC4337_init(entryPoint_);
         erc6551Registry = IDeDealsERC6551Registry(erc6551Registry_);
-        degenDeals = erc6551Registry.degenDeals();
+        deDeals = erc6551Registry.deDeals();
         dealId = dealId_;
     }
 
@@ -53,7 +53,7 @@ contract DegenDealsERC6551Account is
 
     function token() public view virtual override (ERC6551Account, IERC6551Account) returns (uint256 chainId, address tokenContract, uint256 tokenId) {
         chainId = block.chainid;
-        tokenContract = address(degenDeals);
+        tokenContract = address(deDeals);
         tokenId = dealId;
     }
 
@@ -84,7 +84,7 @@ contract DegenDealsERC6551Account is
         hash; signature;
         // ecrecover(hash, v, r, s)
         address signer = address(0); //
-        address owner = degenDeals.ownerOf(dealId);
+        address owner = deDeals.ownerOf(dealId);
         if (signer == owner) {
             return true;
         }
@@ -99,7 +99,7 @@ contract DegenDealsERC6551Account is
     }
 
     function _isValidExecutor(address executor) internal view virtual override returns (bool) {
-        if (degenDeals.ownerOf(dealId) == executor) {
+        if (deDeals.ownerOf(dealId) == executor) {
             return true;
         }
         if (address(entryPoint()) == executor) {
@@ -130,21 +130,21 @@ contract DegenDealsERC6551Account is
     
     function transferObligor(bytes memory data) external virtual override {
         data;
-        if (msg.sender != address(degenDeals)) revert NotGegenDeals(address(degenDeals), msg.sender);
+        if (msg.sender != address(deDeals)) revert NotGegenDeals(address(deDeals), msg.sender);
     }
 
     function transferObligee(bytes memory data) external virtual override {
         data;
-        if (msg.sender != address(degenDeals)) revert NotGegenDeals(address(degenDeals), msg.sender);
+        if (msg.sender != address(deDeals)) revert NotGegenDeals(address(deDeals), msg.sender);
     }
 
-    function fund(bytes memory data) public virtual override {
+    function bargain(bytes memory data) public virtual override {
         data;
-        if (msg.sender != address(degenDeals)) revert NotGegenDeals(address(degenDeals), msg.sender);
+        if (msg.sender != address(deDeals)) revert NotGegenDeals(address(deDeals), msg.sender);
 
-        IDeDealsERC721.DealData memory dealData = degenDeals.getDeal(dealId);
+        IDeDealsERC721.DealData memory dealData = deDeals.getDeal(dealId);
         IERC20 paymentToken = dealData.paymentToken;
-        (,uint256 fundAmount,) = degenDeals.calcFundAmount(dealId);
+        (,uint256 fundAmount,) = deDeals.calcBargainAmount(dealId);
         paymentToken.safeTransferFrom(msg.sender, address(this), fundAmount);
         
         address obligor = dealData.obligor;
@@ -154,35 +154,35 @@ contract DegenDealsERC6551Account is
     /// @notice called by degen deals for storing the payment
     function pay(bytes memory data) public virtual override {
         data;
-        if (msg.sender != address(degenDeals)) revert NotGegenDeals(address(degenDeals), msg.sender);
-        IDeDealsERC721.DealData memory dealData = degenDeals.getDeal(dealId);
+        if (msg.sender != address(deDeals)) revert NotGegenDeals(address(deDeals), msg.sender);
+        IDeDealsERC721.DealData memory dealData = deDeals.getDeal(dealId);
         IERC20 paymentToken = dealData.paymentToken;
         uint256 paymentAmount = dealData.paymentAmount;
         paymentToken.safeTransferFrom(dealData.obligee, address(this), paymentAmount);
 
         /// any code / aml checks / defi integration/ .... / data parsing
 
-        // for example we make instant transfer to owner of NFT
-        address ownerOf = degenDeals.ownerOf(dealId);
-        paymentToken.safeTransfer(ownerOf, paymentAmount);
+        // for example we make instant transfer to owner of NFT (P2P light)
+        address recipient = dealData.recipient;
+        paymentToken.safeTransfer(recipient, paymentAmount);
     }
 
     function deal(bytes memory data) public virtual override returns (bool obligorDeal, bool beneficiaryDeal) {
         data;
-        if (msg.sender != address(degenDeals)) revert NotGegenDeals(address(degenDeals), msg.sender);
+        if (msg.sender != address(deDeals)) revert NotGegenDeals(address(deDeals), msg.sender);
         obligorDeal = true;
         beneficiaryDeal = true;
     }
 
     function arbitrage(bytes memory data) public virtual override {
         data;
-        if (msg.sender != address(degenDeals)) revert NotGegenDeals(address(degenDeals), msg.sender);
+        if (msg.sender != address(deDeals)) revert NotGegenDeals(address(deDeals), msg.sender);
 
     }
 
     function resolve(bytes memory data) public virtual override {
        data;
-       if (msg.sender != address(degenDeals)) revert NotGegenDeals(address(degenDeals), msg.sender);
+       if (msg.sender != address(deDeals)) revert NotGegenDeals(address(deDeals), msg.sender);
 
     }
 

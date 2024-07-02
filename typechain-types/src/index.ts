@@ -15,5 +15,6 @@ import type * as utils from "./utils";
 export type { utils };
 export type { DeDealERC20 } from "./DeDealERC20";
 export type { DeDealsAffilatesERC721 } from "./DeDealsAffilatesERC721";
+export type { DeDealsBoss } from "./DeDealsBoss";
 export type { DeDealsERC721 } from "./DeDealsERC721";
 export type { DeDealsSoulBoundTokenERC721 } from "./DeDealsSoulBoundTokenERC721";

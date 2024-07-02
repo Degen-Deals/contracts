@@ -10,7 +10,7 @@ interface IDeDealsERC6551Account is IERC6551Account {
 
     function initialize(address entryPoint_, address erc6551Registry_, uint256 dealId) external;
 
-    function degenDeals() external view returns (IDeDealsERC721);
+    function deDeals() external view returns (IDeDealsERC721);
 
     function dealId() external view returns (uint256);
 
@@ -18,7 +18,7 @@ interface IDeDealsERC6551Account is IERC6551Account {
 
     function transferObligee(bytes memory data) external;
 
-    function fund(bytes memory data) external;
+    function bargain(bytes memory data) external;
 
     function pay(bytes memory data) external;
 

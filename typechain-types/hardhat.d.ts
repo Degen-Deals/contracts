@@ -218,6 +218,10 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.DeDealsAffilatesERC721__factory>;
     getContractFactory(
+      name: "DeDealsBoss",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.DeDealsBoss__factory>;
+    getContractFactory(
       name: "DegenDealsERC6551Account",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.DegenDealsERC6551Account__factory>;
@@ -289,6 +293,10 @@ declare module "hardhat/types/runtime" {
       name: "IDeDealsAffilatesERC721",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.IDeDealsAffilatesERC721__factory>;
+    getContractFactory(
+      name: "IDeDealsBoss",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.IDeDealsBoss__factory>;
     getContractFactory(
       name: "IDeDealsERC6551Account",
       signerOrOptions?: ethers.Signer | FactoryOptions
@@ -570,6 +578,11 @@ declare module "hardhat/types/runtime" {
       signer?: ethers.Signer
     ): Promise<Contracts.DeDealsAffilatesERC721>;
     getContractAt(
+      name: "DeDealsBoss",
+      address: string | ethers.Addressable,
+      signer?: ethers.Signer
+    ): Promise<Contracts.DeDealsBoss>;
+    getContractAt(
       name: "DegenDealsERC6551Account",
       address: string | ethers.Addressable,
       signer?: ethers.Signer
@@ -659,6 +672,11 @@ declare module "hardhat/types/runtime" {
       address: string | ethers.Addressable,
       signer?: ethers.Signer
     ): Promise<Contracts.IDeDealsAffilatesERC721>;
+    getContractAt(
+      name: "IDeDealsBoss",
+      address: string | ethers.Addressable,
+      signer?: ethers.Signer
+    ): Promise<Contracts.IDeDealsBoss>;
     getContractAt(
       name: "IDeDealsERC6551Account",
       address: string | ethers.Addressable,
@@ -895,6 +913,10 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.DeDealsAffilatesERC721>;
     deployContract(
+      name: "DeDealsBoss",
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.DeDealsBoss>;
+    deployContract(
       name: "DegenDealsERC6551Account",
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.DegenDealsERC6551Account>;
@@ -966,6 +988,10 @@ declare module "hardhat/types/runtime" {
       name: "IDeDealsAffilatesERC721",
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.IDeDealsAffilatesERC721>;
+    deployContract(
+      name: "IDeDealsBoss",
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.IDeDealsBoss>;
     deployContract(
       name: "IDeDealsERC6551Account",
       signerOrOptions?: ethers.Signer | DeployContractOptions
@@ -1247,6 +1273,11 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.DeDealsAffilatesERC721>;
     deployContract(
+      name: "DeDealsBoss",
+      args: any[],
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.DeDealsBoss>;
+    deployContract(
       name: "DegenDealsERC6551Account",
       args: any[],
       signerOrOptions?: ethers.Signer | DeployContractOptions
@@ -1336,6 +1367,11 @@ declare module "hardhat/types/runtime" {
       args: any[],
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.IDeDealsAffilatesERC721>;
+    deployContract(
+      name: "IDeDealsBoss",
+      args: any[],
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.IDeDealsBoss>;
     deployContract(
       name: "IDeDealsERC6551Account",
       args: any[],

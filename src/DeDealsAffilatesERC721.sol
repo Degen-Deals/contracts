@@ -45,7 +45,7 @@ contract DeDealsAffilatesERC721 is Initializable, ERC721, IDeDealsAffilatesERC72
     /// @dev affilate id => address of minter
     mapping (uint256 affilateId => address) public minter;
 
-    constructor() ERC721("Degen Deals Affilates", "DeAFFS") {}
+    constructor() ERC721("DeDeals Affilates", "DeDEALS-AFFS") {}
 
     function initialize(address dedeal_, address deDeals_) public initializer() {
         dedeal = IDeDealERC20(dedeal_);
@@ -77,7 +77,7 @@ contract DeDealsAffilatesERC721 is Initializable, ERC721, IDeDealsAffilatesERC72
 
     }
 
-    function aaa(uint256 childAffilateId, uint256 parentAffilateId) public {
+    function sell(uint256 targetAffilateId, uint256 parentAffilateId) public {
         
     }
 

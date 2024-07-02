@@ -8,7 +8,7 @@ interface IDeDealsERC6551Registry is IERC6551Registry {
 
     error CallerNotDegenDeals(address msgSender, address degenDeals);
 
-    function degenDeals() external view returns (IDeDealsERC721);
+    function deDeals() external view returns (IDeDealsERC721);
 
     function dealAccounts(uint256 dealId) external view returns (address);
 

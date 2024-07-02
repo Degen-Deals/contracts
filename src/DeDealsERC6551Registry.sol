@@ -1,17 +1,21 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
+import "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
+import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import "./interfaces/ERC4337/IEntryPoint.sol";
+import "./interfaces/IDeDealsBoss.sol";
 import "./interfaces/IDeDealsERC721.sol";
 import "./interfaces/IDeDealsERC6551Account.sol";
 import "./interfaces/IDeDealsERC6551Registry.sol";
-import "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
-import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 
 contract DegenDealsERC6551Registry is Initializable, IDeDealsERC6551Registry {
 
+    /// @dev address of DeDeals Boss
+    IDeDealsBoss public deDealsBoss;
+
     /// @dev address to degen deals NFT collection
-    IDeDealsERC721 public degenDeals;
+    IDeDealsERC721 public deDeals;
 
     /// @dev default account for NFT
     IDeDealsERC6551Account public degenDealsERC6551Account;
@@ -27,19 +31,14 @@ contract DegenDealsERC6551Registry is Initializable, IDeDealsERC6551Registry {
     mapping(uint256 dealId => address) public dealAccountImplementations;
 
     function initialize(
-        address degenDeals_, 
+        address deDeals_, 
         address degenDealsERC6551Account_,
         address entryPoint_
     ) public initializer() {
         owner = msg.sender;
-        degenDeals = IDeDealsERC721(degenDeals_);
+        deDeals = IDeDealsERC721(deDeals_);
         degenDealsERC6551Account = IDeDealsERC6551Account(payable(degenDealsERC6551Account_));
         entryPoint = IEntryPoint(entryPoint_);
-    }
-
-    modifier onlyDegenDeals() {
-        require(msg.sender == address(degenDeals), "Not DegenDeals");
-        _;
     }
 
     function setEntryPoint(address entryPoint_) public {
@@ -59,9 +58,7 @@ contract DegenDealsERC6551Registry is Initializable, IDeDealsERC6551Registry {
         address tokenContract,
         uint256 tokenId
     ) public virtual returns (address) {
-        if (msg.sender != address(degenDeals)) {
-            revert CallerNotDegenDeals(msg.sender, address(degenDeals));
-        }
+        if (address(deDeals) != msg.sender) { revert CallerNotDegenDeals(msg.sender, address(deDeals)); }
         return _createAccount(
             implementation,
             salt,
@@ -181,12 +178,8 @@ contract DegenDealsERC6551Registry is Initializable, IDeDealsERC6551Registry {
     }
 
     function createDealAccount(uint256 dealId, address implementation) public returns (address dealAccount) {
-        if (msg.sender != address(degenDeals)) {
-            revert CallerNotDegenDeals(msg.sender, address(degenDeals));
-        }
-        if (implementation == address(0)) {
-            implementation = address(degenDealsERC6551Account);
-        }
+        if (address(deDeals) != msg.sender) { revert CallerNotDegenDeals(msg.sender, address(deDeals)); }
+        if (implementation == address(0)) { implementation = address(degenDealsERC6551Account); }
         bytes memory data = abi.encodeWithSignature(
             "initialize(address,address,uint256)",
             address(entryPoint),
@@ -194,16 +187,12 @@ contract DegenDealsERC6551Registry is Initializable, IDeDealsERC6551Registry {
             dealId
         );
         dealAccount = address(new ERC1967Proxy(implementation, data));
-        
-        // IDegenDealsERC6551Account(dealAccount).initialize(address(entryPoint), address(this), dealId);
         dealAccountImplementations[dealId] = implementation;
         dealAccounts[dealId] = dealAccount;
     }
 
     function deriveCreateDealAccount(uint256 dealId, uint256 splitDealId) external returns (address dealAccount) {
-        if (msg.sender != address(degenDeals)) {
-            revert CallerNotDegenDeals(msg.sender, address(degenDeals));
-        }
+        if (address(deDeals) != msg.sender) { revert CallerNotDegenDeals(msg.sender, address(deDeals)); }
         address implementation = dealAccountImplementations[dealId];
         bytes memory data = abi.encodeWithSignature(
             "initialize(address,address,uint256)",

@@ -5,6 +5,8 @@ import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 
 interface IDeDealsSoulBoundTokenERC721 is IERC721 {
 
+    error OnlyDeDealsBoss(address sender);
+
     error FailedVerification(address account);
 
     error SoulBoundTokenExist(address account, uint256 sbtId);
